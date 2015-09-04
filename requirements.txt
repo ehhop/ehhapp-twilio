@@ -2,8 +2,11 @@ DateTime==4.0.1
 Flask==0.10.1
 Jinja2==2.8
 MarkupSafe==0.23
+SOAPpy==0.12.22
 Werkzeug==0.10.4
 argparse==1.2.1
+defusedxml==0.4.1
+docutils==0.12
 gunicorn==19.3.0
 httplib2==0.9.1
 itsdangerous==0.24
@@ -11,4 +14,5 @@ pytz==2015.4
 six==1.9.0
 twilio==4.5.0
 wsgiref==0.1.2
+wstools==0.4.3
 zope.interface==4.1.2
