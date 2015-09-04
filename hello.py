@@ -150,7 +150,7 @@ def clinic_closed_menu():
 	intent = request.values.get('Digits', None)
 	
 	if intent in ['2','3','4']:
-		return redirect("/take_message?intent=" + intent)
+		return redirect("/take_message/" + intent)
 	else:
 		resp.say("I'm sorry, but you have pressed an incorrect key.", voice='alice', language='en-US')
 		resp.pause(length=3)
