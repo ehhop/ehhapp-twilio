@@ -35,13 +35,11 @@ def handle_key_hello():
 	'''respond to initial direction'''
 	resp = twilio.twiml.Response()
 	digit = request.values.get('Digits', None)
-	
+	#get day of week (0 is Monday and 6 is Sunday)
+	day_of_week = datetime.now(pytz.timezone('US/Eastern')).weekday()
+		
 	if digit == '1':
 		'''instructions in english selected'''
-		
-		#get day of week (0 is Monday and 6 is Sunday)
-		day_of_week = datetime.now(pytz.timezone('US/Eastern')).weekday()
-		
 		if day_of_week == 5: #clinic is open on Saturdays
 			with resp.gather(numDigits=1, action="/handle_key/clinic_open_menu", method="GET") as g:
 				# The EHHOP clinic phone number has been changed to 877-372-4161.  
@@ -69,17 +67,37 @@ def handle_key_hello():
 				for i in range(0,3):
 					g.play("https://s3.amazonaws.com/ehhapp-phone/clinic_closed_menu.mp3")
 					g.pause(length=5)
+					
 	elif digit == '2':
 		'''instructions in spanish selected'''
-		#TODO
-		resp.say("This feature is currently under construction. Goodbye!", voice='alice', language='en-US')
+		# spanish: if this is an emerg, dial 911
+		resp.play('https://s3.amazonaws.com/ehhapp-phone/sp_emerg_911.mp3')
+		if day_of_week == 5: #clinic is open on Saturdays
+			with resp.gather(numDigits=1, action="/handle_key/sp/clinic_open_menu", method="GET") as g:
+				#spanish: ehhop phone # has changed
+				g.play('https://s3.amazonaws.com/ehhapp-phone/sp_ehhop_phone_changed.mp3')
+				# spanish: list options 1-4 similar to english
+				for i in range(0,3):
+					g.play('https://s3.amazonaws.com/ehhapp-phone/sp_clinic_open_menu.mp3')
+					g.pause(length=5)
+		else: #clinic not open
+			with resp.gather(numDigits=1, action="/handle_key/sp/clinic_closed_menu", method="GET") as g:
+				#spanish: ehhop phone # has changed
+				g.play('https://s3.amazonaws.com/ehhapp-phone/sp_ehhop_phone_changed.mp3')
+				# spanish: list options 2-4 similar to english
+				for i in range(0,3):
+					g.play('https://s3.amazonaws.com/ehhapp-phone/sp_clinic_closed_menu.mp3')
+					g.pause(length=5)
+	
 	elif digit == '*':
 		'''caller id feature'''
 		with resp.gather(numDigits=8, action='/caller_id_auth', method='GET') as g:
 			g.say("Please enter your passcode.", voice='alice')
+	
 	else:
 		'''They have pressed an incorrect key.'''
 		return redirect('/')
+	
 	return str(resp)
 
 @app.route("/handle_key/clinic_open_menu", methods=["GET", "POST"])
@@ -162,6 +180,7 @@ def clinic_closed_menu():
 			#or other matters, please press 4.
 			g.play("https://s3.amazonaws.com/ehhapp-phone/clinic_closed_menu.mp3")
 			g.pause(length=5)
+	return str(resp)
 	
 @app.route("/take_message/<intent>", methods=['GET', 'POST'])
 def take_message(intent):
@@ -233,8 +252,7 @@ def caller_id_auth():
 def caller_id_dial():
 	resp = twilio.twiml.Response()
 	number=request.values.get("Digits", None)
-	
-	resp.say("Connecting you with destination telephone.", voice='alice')
+	resp.say("Connecting you with your destination.", voice='alice')
 	resp.dial("+1" + number, callerId='+18622425952')
 	resp.say("I'm sorry, but your call either failed or may have been cut short.", voice='alice', language='en-US')
 	with resp.gather(numDigits=1, action='/caller_id_redial/' + number, method='GET') as g:
@@ -244,10 +262,134 @@ def caller_id_dial():
 @app.route("/caller_id_redial/<number>", methods=['GET','POST'])
 def caller_id_redial(number):
 	resp = twilio.twiml.Response()
-	
-	resp.say("Connecting you with destination telephone.", voice='alice')
+	resp.say("Connecting you with your destination.", voice='alice')
 	resp.dial("+1" + number, callerId='+18622425952')
 	resp.say("I'm sorry, but your call either failed or may have been cut short.", voice='alice', language='en-US')
 	with resp.gather(numDigits=1, action='/caller_id_redial/' + number, method='GET') as g:
 		g.say("If you would like to try again, please press 1, otherwise, hang up now.", voice='alice', language='en-US')
+	return str(resp)
+
+################# spanish path ###############
+
+@app.route("/handle_key/sp/clinic_open_menu", methods=["GET", "POST"])
+def sp_clinic_open_menu():
+	'''respond to digit press when the clinic is open
+	1 - appt today
+	2 - not been here before
+	3 - urgent concern and ehhop patient
+	4 - ehhop pt with question
+	'''
+	resp = twilio.twiml.Response()
+	digit = request.values.get('Digits', None)
+	
+	# get next saturday's date
+	time_now = datetime.now(pytz.timezone('US/Eastern'))
+	day_of_week = time_now.weekday()
+	addtime = None
+	if day_of_week == 6:
+		addtime=timedelta(6)
+	else:
+		addtime=timedelta(5-day_of_week)
+	satdate = (time_now+addtime).strftime('%Y-%m-%d')
+	
+	# get the phone # of the on call
+	server = WSDL.Proxy(wsdlfile)
+	oncall_phone_unsan = server.get_oncall_CM_phone(nearest_saturday=satdate).strip('-')
+	d = re.compile(r'[^\d]+')
+	oncall_current_phone = '+1' + d.sub('', oncall_phone_unsan)
+	
+	# appointment today
+	if digit == '1':
+		# now transferring your call
+		resp.play("https://s3.amazonaws.com/ehhapp-phone/sp_xfer_call.mp3")
+		# dial current CM
+		resp.dial(oncall_current_phone)
+		# if the call fails
+		resp.play("https://s3.amazonaws.com/ehhapp-phone/sp_try_again.mp3")
+		# replay initial menu
+		with resp.gather(numDigits=1, action="/handle_key/sp/clinic_open_menu", method="GET") as g:
+			# spanish: list options 1-4 similar to english
+			for i in range(0,3):
+				g.play('https://s3.amazonaws.com/ehhapp-phone/sp_clinic_open_menu.mp3')
+				g.pause(length=5)
+	# not been here before
+	elif digit in ['2', '3', '4']:
+		return redirect('/sp/take_message/' + digit)
+	# accidential key press
+	else:
+		resp.play("https://s3.amazonaws.com/ehhapp-phone/sp_incorrect_key.mp3")
+		resp.pause(length=3)
+		with resp.gather(numDigits=1, action="/handle_key/sp/clinic_open_menu", method="GET") as g:
+			# spanish: list options 1-4 similar to english
+			for i in range(0,3):
+				g.play('https://s3.amazonaws.com/ehhapp-phone/sp_clinic_open_menu.mp3')
+				g.pause(length=5)
+	return str(resp)
+
+@app.route("/handle_key/sp/clinic_closed_menu", methods=["GET", "POST"])
+def sp_clinic_closed_menu():
+	'''what to do if the clinic is closed'''
+	resp = twilio.twiml.Response()
+	intent = request.values.get('Digits', None)
+	
+	if intent in ['2','3','4']:
+		return redirect("/sp/take_message/" + intent)
+	else:
+		resp.play("https://s3.amazonaws.com/ehhapp-phone/sp_incorrect_key.mp3")
+		resp.pause(length=3)
+		with resp.gather(numDigits=1, action="/handle_key/sp/clinic_closed_menu", method="GET") as g:
+			# spanish: list options 2-4 similar to english
+			for i in range(0,3):
+				g.play('https://s3.amazonaws.com/ehhapp-phone/sp_clinic_closed_menu.mp3')
+				g.pause(length=5)
+	return str(resp)
+	
+@app.route("/sp/take_message/<intent>", methods=['GET', 'POST'])
+def sp_take_message(intent):
+	'''takes a voice message and passes it to the voicemail server'''
+	# variables we need to set:
+	# satdate - next saturday's date as yyyy-MM-dd
+	# caller id - the number the call is coming from
+	
+	resp = twilio.twiml.Response()
+	
+	# get next saturday's date
+	time_now = datetime.now(pytz.timezone('US/Eastern'))
+	day_of_week = time_now.weekday()
+	addtime = None
+	if day_of_week == 6:
+		addtime=timedelta(6)
+	else:
+		addtime=timedelta(5-day_of_week)
+	
+	satdate = (time_now+addtime).strftime('%Y-%m-%d')
+	caller_id = request.values.get('From', 'None')
+	
+	after_record = '/sp/handle_recording/' + intent + '/' + caller_id + '/' + satdate	
+	
+	if intent == '3':
+		#spanish: Please leave a message for us after the tone. We will call you back as soon as possible.
+		resp.play("https://s3.amazonaws.com/ehhapp-phone/sp_urgent_message.mp3")
+	if intent in ['2','4']:
+		#spanish: Please leave a message for us after the tone. We will call you back within one day.
+		resp.play("https://s3.amazonaws.com/ehhapp-phone/sp_nonurgent_message.mp3")
+	resp.play("https://s3.amazonaws.com/ehhapp-phone/sp_vm_instructions.mp3")
+	resp.record(maxLength=300, action=after_record, transcribe='true')
+	
+	return str(resp)
+
+@app.route("/sp/handle_recording/<int:intent>/<ani>/<satdate>", methods=['GET', 'POST'])
+def sp_handle_recording(intent, ani, satdate):
+	'''patient has finished leaving recording'''
+	
+	resp = twilio.twiml.Response()
+	recording_url = request.values.get("RecordingUrl", None)
+	
+	# send the notification to the server
+	server = WSDL.Proxy(wsdlfile)
+	vm_alert = server.voicemail_alert(intention=intent, ani=ani, nearest_saturday=satdate, recording_url=recording_url)
+	
+	###if the message was successfully sent... TODO to check
+	# Your message was sent. Thank you for contacting EHHOP. Goodbye!
+	resp.play("https://s3.amazonaws.com/ehhapp-phone/sp_sent_message.mp3")
 	return str(resp)
