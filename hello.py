@@ -211,5 +211,5 @@ def handle_recording(intent, ani, satdate):
 	
 	# if the message was successfully sent...
 	# ...no way to check? TODO
-	resp.play("https://s3.amazonaws.com/ehhapp-phone/vm_instructions.mp3")
+	resp.play("https://s3.amazonaws.com/ehhapp-phone/sent_message.mp3")
 	return str(resp)
