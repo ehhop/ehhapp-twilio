@@ -1,6 +1,6 @@
 import os
 import datetime, pytz
-from flask import Flask, request
+from flask import Flask, request, redirect
 import twilio.twiml
 
 app = Flask(__name__, static_folder='')
@@ -61,14 +61,16 @@ def handle_key_hello():
 				#If you are an EHHOP patient and have a question about medications, appointments, 
 				#or other matters, please press 4.
 				g.play("https://s3.amazonaws.com/ehhapp-phone/clinic_closed_menu.mp3", loop=3)
-	if digit == '2':
+	elif digit == '2':
 		'''instructions in spanish selected'''
 		#TODO
-		resp.say("This feature is currently under construction. Goodbye!", voice=alice, language='en-US')
-	
-	if digit == '*':
+		resp.say("This feature is currently under construction. Goodbye!", voice='alice', language='en-US')
+	elif digit == '*':
 		'''caller id feature'''
 		#todo
-		resp.say("This feature is currently under construction. Goodbye!", voice=alice, language='en-US')
+		resp.say("This feature is currently under construction. Goodbye!", voice='alice', language='en-US')
+	else:
+		'''They have pressed an incorrect key.'''
+		return redirect('/')
 	return str(resp)
 	
