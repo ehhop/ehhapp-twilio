@@ -75,8 +75,8 @@ def handle_key_hello():
 		resp.say("This feature is currently under construction. Goodbye!", voice='alice', language='en-US')
 	elif digit == '*':
 		'''caller id feature'''
-		#todo
-		resp.say("This feature is currently under construction. Goodbye!", voice='alice', language='en-US')
+		with resp.gather(numDigits=8, action='/caller_id_auth', method='GET') as g:
+			g.say("Please enter your passcode.", voice='alice')
 	else:
 		'''They have pressed an incorrect key.'''
 		return redirect('/')
@@ -203,13 +203,51 @@ def handle_recording(intent, ani, satdate):
 	
 	resp = twilio.twiml.Response()
 	recording_url = request.values.get("RecordingUrl", None)
-	# send the notification to the server
 	
-	# get the phone # of the on call
+	# send the notification to the server
 	server = WSDL.Proxy(wsdlfile)
 	vm_alert = server.voicemail_alert(intention=intent, ani=ani, nearest_saturday=satdate, recording_url=recording_url)
 	
-	# if the message was successfully sent...
-	# ...no way to check? TODO
+	###if the message was successfully sent... TODO to check
+	# Your message was sent. Thank you for contacting EHHOP. Goodbye!
 	resp.play("https://s3.amazonaws.com/ehhapp-phone/sent_message.mp3")
+	return str(resp)
+
+@app.route("/caller_id_auth", methods=['GET','POST'])
+def caller_id_auth():
+	resp = twilio.twiml.Response()
+	passcode=request.values.get("Digits", None)
+	
+	if passcode == '12345678':
+		#success
+		with resp.gather(numDigits=10, action='/caller_id_dial', method='GET') as g:
+			g.say("Please enter the ten-digit phone number you wish to call, starting with the area code", voice='alice')
+		return str(resp)
+	else:
+		resp.say("I'm sorry, that passcode is incorrect.", voice='alice')
+		with resp.gather(numDigits=8, action='/caller_id_auth', method='GET') as g:
+			g.say("Please enter your passcode.", voice='alice')
+		return str(resp)
+
+@app.route("/caller_id_dial", methods=['GET','POST'])
+def caller_id_dial():
+	resp = twilio.twiml.Response()
+	number=request.values.get("Digits", None)
+	
+	resp.say("Connecting you with destination telephone.", voice='alice')
+	resp.dial("+1" + number, callerId='+18622425952')
+	resp.say("I'm sorry, but your call either failed or may have been cut short.", voice='alice', language='en-US')
+	with resp.gather(numDigits=1, action='/caller_id_redial/' + number, method='GET') as g:
+		g.say("If you would like to try again, please press 1, otherwise, hang up now.", voice='alice', language='en-US')
+	return str(resp)
+	
+@app.route("/caller_id_redial/<number>", methods=['GET','POST'])
+def caller_id_redial(number):
+	resp = twilio.twiml.Response()
+	
+	resp.say("Connecting you with destination telephone.", voice='alice')
+	resp.dial("+1" + number, callerId='+18622425952')
+	resp.say("I'm sorry, but your call either failed or may have been cut short.", voice='alice', language='en-US')
+	with resp.gather(numDigits=1, action='/caller_id_redial/' + number, method='GET') as g:
+		g.say("If you would like to try again, please press 1, otherwise, hang up now.", voice='alice', language='en-US')
 	return str(resp)
