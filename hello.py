@@ -163,7 +163,7 @@ def clinic_closed_menu():
 			g.play("https://s3.amazonaws.com/ehhapp-phone/clinic_closed_menu.mp3")
 			g.pause(length=5)
 	
-@app.route("/take_message/<int:intent>", methods=['GET', 'POST'])
+@app.route("/take_message/<intent>", methods=['GET', 'POST'])
 def take_message(intent):
 	'''takes a voice message and passes it to the voicemail server'''
 	# variables we need to set:
