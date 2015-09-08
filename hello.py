@@ -15,13 +15,15 @@ def hello_ehhop():
 	#Gracias por llamar a la Clinica de EHHOP. 
 	#Para instrucciones en espanol, marque el numero 2. 
 	#Thank you for calling the EHHOP clinic. 
-	#For instructions in English, please press 1. 
+	#If this is an emergency please 
+	#hang up and dial 9 1 1 now.
+	#For instructions in English, please press 1.
+	#If you know your party's extension, please press #.
 	#EHHOP es la Asociacion Comunitaria para la Salud de 
 	#East Harlem en Mount Sinai. Si esto es una emergencia, 
 	#cuelgue el telefono y llame ahora al 9-1-1. We are the 
 	#East Harlem Health Outreach Partnership of the Icahn School 
-	#of Medicine at Mount Sinai. If this is an emergency please 
-	#hang up and dial 9 1 1 now.
+	#of Medicine at Mount Sinai. 
 
 	resp = twilio.twiml.Response()
 	with resp.gather(numDigits=1, action="/handle_key/hello", method="GET") as g:
@@ -42,10 +44,7 @@ def handle_key_hello():
 		'''instructions in english selected'''
 		if day_of_week == 5: #clinic is open on Saturdays
 			with resp.gather(numDigits=1, action="/handle_key/clinic_open_menu", method="GET") as g:
-				# The EHHOP clinic phone number has been changed to 877-372-4161.  
-				# Please save this number, because the old one will soon be discontinued. 
-				# Again, the new EHHOP number is 877-372-4161.
-				g.play('https://s3.amazonaws.com/ehhapp-phone/ehhop_phone_changed.mp3')
+				
 				#If you have an appointment today, please press 1. 
 				#If you have not been to EHHOP before, please press 2.
 				#If you are an EHHOP patient and have an urgent medical concern, please press 3.
@@ -56,10 +55,7 @@ def handle_key_hello():
 					g.pause(length=5)
 		else:
 			with resp.gather(numDigits=1, action="/handle_key/clinic_closed_menu", method="GET") as g:
-				# The EHHOP clinic phone number has been changed to 877-372-4161.  
-				# Please save this number, because the old one will soon be discontinued. 
-				# Again, the new EHHOP number is 877-372-4161.
-				g.play('https://s3.amazonaws.com/ehhapp-phone/ehhop_phone_changed.mp3')
+				
 				#If you have not been to EHHOP before, please press 2.
 				#If you are an EHHOP patient and have an urgent medical concern, please press 3.
 				#If you are an EHHOP patient and have a question about medications, appointments, 
@@ -74,21 +70,20 @@ def handle_key_hello():
 		resp.play('https://s3.amazonaws.com/ehhapp-phone/sp_emerg_911.mp3')
 		if day_of_week == 5: #clinic is open on Saturdays
 			with resp.gather(numDigits=1, action="/handle_key/sp/clinic_open_menu", method="GET") as g:
-				#spanish: ehhop phone # has changed
-				g.play('https://s3.amazonaws.com/ehhapp-phone/sp_ehhop_phone_changed.mp3')
 				# spanish: list options 1-4 similar to english
 				for i in range(0,3):
 					g.play('https://s3.amazonaws.com/ehhapp-phone/sp_clinic_open_menu.mp3')
 					g.pause(length=5)
 		else: #clinic not open
 			with resp.gather(numDigits=1, action="/handle_key/sp/clinic_closed_menu", method="GET") as g:
-				#spanish: ehhop phone # has changed
-				g.play('https://s3.amazonaws.com/ehhapp-phone/sp_ehhop_phone_changed.mp3')
 				# spanish: list options 2-4 similar to english
 				for i in range(0,3):
 					g.play('https://s3.amazonaws.com/ehhapp-phone/sp_clinic_closed_menu.mp3')
 					g.pause(length=5)
-	
+	elif digit == "#": 
+		'''extension feature'''
+		resp.say("This feature has not yet been implemented. Goodbye!", voice='alice', language="en-US")
+		
 	elif digit == '*':
 		'''caller id feature'''
 		with resp.gather(numDigits=8, action='/caller_id_auth', method='GET') as g:
@@ -172,8 +167,7 @@ def clinic_closed_menu():
 	else:
 		resp.say("I'm sorry, but you have pressed an incorrect key.", voice='alice', language='en-US')
 		resp.pause(length=3)
-		with resp.gather(numDigits=1, action="/handle_key/clinic_closed_menu", method="GET") as g:
-			#If you have an appointment today, please press 1. 
+		with resp.gather(numDigits=1, action="/handle_key/clinic_closed_menu", method="GET") as g: 
 			#If you have not been to EHHOP before, please press 2.
 			#If you are an EHHOP patient and have an urgent medical concern, please press 3.
 			#If you are an EHHOP patient and have a question about medications, appointments, 
