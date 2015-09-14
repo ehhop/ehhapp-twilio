@@ -1,4 +1,4 @@
-import json
+import json, re
 import gspread
 from oauth2client.client import SignedJwtAssertionCredentials
 execfile("params.conf")
@@ -30,30 +30,31 @@ class EHHOPdb:
 	def getschedule(self):
 		# download schedule
 		sh = self.conn.open_by_key(amion_spreadsheet_id)
-		ws = sh.worksheet(amion_worksheet_schedule, head=4) # let the fourth line be the header
-		records = ws.get_all_records()
+		ws = sh.worksheet(amion_worksheet_schedule) 
+		records = ws.get_all_records(head=4) #4th line is header
 		return records
 
-	def lookup_phone_by_extension(ext):		
-		#get matching extension (O(N) time lookup...)
+	def lookup_phone_by_extension(self, ext):		
+		# get matching extension (O(N) time lookup...)
+		# ext should already be an int
 		for record in self.personnel:
 			if ext == record['Extension']:
-				return '+1' + sanitize.sub('', record['Telephone']) # if we found the extension
+				return [record['Name'], '+1' + self.sanitize.sub('', record['Telephone'])] # if we found the extension
 		return None # if no return
 
-	def lookup_phone_by_name(name):
+	def lookup_phone_by_name(self, name):
 		#get matching extension (O(N) time lookup...)
 		for record in self.personnel:
 			if name == record['Name']:
-				return '+1' + sanitize.sub('', record['Telephone']) # if we found the extension
+				return '+1' + self.sanitize.sub('', record['Telephone']) # if we found the extension
 		return None # if no return
 
-	def lookup_name_in_schedule(person_type, lookup_date):
+	def lookup_name_in_schedule(self, person_type, lookup_date):
 		# get relevant keys
-		keys = [i for i in self.schedule.keys() if person_type.lower() in i.lower()]
+		keys = [i for i in self.schedule[0].keys() if person_type.lower() in i.lower()]
 		# get matching line in schedule (O(N) time lookup...)
 		for record in self.schedule:
 			if record['Date'] == lookup_date:
-				return [record[i] for i in keys]
+				return [record[i] for i in keys if record[i] != '']
 		return [] # return empty list
 	
