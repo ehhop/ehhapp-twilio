@@ -83,7 +83,8 @@ def handle_key_hello():
 					g.pause(length=5)
 	elif digit == "3": 
 		'''extension feature'''
-		resp.say("This feature has not yet been implemented. Goodbye!", voice='alice', language="en-US")
+		with resp.gather(numDigits=4, action="/dial_extension", method="GET") as g:
+			g.say("Please dial your four digit extension now.", voice='alice', language="en-US")
 		
 	elif digit == '*':
 		'''caller id feature'''
@@ -96,6 +97,32 @@ def handle_key_hello():
 	
 	return str(resp)
 
+@app.route("/dial_extension", methods=["GET", "POST"])
+def dial_extension():
+	resp = twilio.twiml.Response()
+	digits = request.values.get('Digits', None)
+	d = re.compile(r'[^\d]+')
+	dialed_ext = int(d.sub('', digits))
+	if len(str(dialed_ext)) != 4:
+		resp.say("You have dialed an invalid extension. Extensions are four digits long.")
+		resp.pause(3)
+		with resp.gather(numDigits=4, action="/dial_extension", method="GET") as g:
+			g.say("Please dial your four digit extension now.", voice='alice', language="en-US")
+	else:
+		database = EHHOPdb(credentials)
+		return_num = database.lookup_phone_by_extension(dialed_ext)
+		if return_num == None:
+			resp.say("I'm sorry, I couldn't find that extension.")
+			resp.pause(3)
+			with resp.gather(numDigits=4, action="/dial_extension", method="GET") as g:
+				g.say("Please dial your four digit extension now.", voice='alice', language="en-US")
+		else:
+			resp.say("Connecting you with " + return_num[0], voice='alice', language='en-US')
+			resp.pause(3)
+			resp.dial("+1" + return_num[1], callerId='+18622425952')
+			resp.say("I'm sorry, but your call either failed or may have been cut short. Goodbye!", voice='alice', language='en-US')
+	return str(resp)
+	
 @app.route("/handle_key/clinic_open_menu", methods=["GET", "POST"])
 def clinic_open_menu():
 	'''respond to digit press when the clinic is open
