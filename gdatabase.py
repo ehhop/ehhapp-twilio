@@ -1,7 +1,7 @@
 import json
 import gspread
 from oauth2client.client import SignedJwtAssertionCredentials
-execfile("params.conf", config)
+execfile("params.conf")
 
 json_key = json.load(open(google_oauth2_file))
 scope = ['https://spreadsheets.google.com/feeds']
@@ -23,14 +23,13 @@ class EHHOPdb:
 		sh = self.conn.open_by_key(amion_spreadsheet_id)
 		ws = sh.worksheet(amion_worksheet_name)
 		records = ws.get_all_records()
-		
 		#remove header lines or those deactivated by '#'
 		records = [i for i in records if i['Name'][0] != "#"]
 		return records
 
 	def getschedule(self):
 		# download schedule
-		sh = gc.open_by_key(amion_spreadsheet_id)
+		sh = self.conn.open_by_key(amion_spreadsheet_id)
 		ws = sh.worksheet(amion_worksheet_schedule, head=4) # let the fourth line be the header
 		records = ws.get_all_records()
 		return records

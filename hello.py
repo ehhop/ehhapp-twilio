@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from SOAPpy import WSDL
 from flask import Flask, request, redirect
 import twilio.twiml
-import gdatabase
+execfile("gdatabase.py")
 
 wsdlfile='http://phone.ehhapp.org/services.php?wsdl'
 
