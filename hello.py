@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from SOAPpy import WSDL
 from flask import Flask, request, redirect
 import twilio.twiml
+import gdatabase
 
 wsdlfile='http://phone.ehhapp.org/services.php?wsdl'
 
@@ -80,7 +81,7 @@ def handle_key_hello():
 				for i in range(0,3):
 					g.play('https://s3.amazonaws.com/ehhapp-phone/sp_clinic_closed_menu.mp3')
 					g.pause(length=5)
-	elif digit == "#": 
+	elif digit == "3": 
 		'''extension feature'''
 		resp.say("This feature has not yet been implemented. Goodbye!", voice='alice', language="en-US")
 		
