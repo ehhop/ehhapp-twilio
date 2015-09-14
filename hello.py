@@ -1,9 +1,9 @@
-import os, pytz, re
+import sys, os, pytz, re
 from datetime import datetime, timedelta
 from SOAPpy import WSDL
 from flask import Flask, request, redirect
+execfile(os.path.dirname(os.path.realpath(__file__)) + "/gdatabase.py")
 import twilio.twiml
-execfile("gdatabase.py")
 
 wsdlfile='http://phone.ehhapp.org/services.php?wsdl'
 
@@ -101,26 +101,25 @@ def handle_key_hello():
 def dial_extension():
 	resp = twilio.twiml.Response()
 	digits = request.values.get('Digits', None)
-	d = re.compile(r'[^\d]+')
-	dialed_ext = int(d.sub('', digits))
-	if len(str(dialed_ext)) != 4:
-		resp.say("You have dialed an invalid extension. Extensions are four digits long.")
-		resp.pause(3)
+	database = EHHOPdb(credentials)
+	try:
+		return_num = database.lookup_phone_by_extension(int(digits))
+	except:
+		resp.say("I'm sorry, I couldn't find that extension.")
+		resp.pause(length=3)
+		with resp.gather(numDigits=4, action="/dial_extension", method="GET") as g:
+			g.say("Please dial your four digit extension now.", voice='alice', language="en-US")
+		return str(resp)
+	if return_num == None:
+		resp.say("I'm sorry, I couldn't find that extension.")
+		resp.pause(length=3)
 		with resp.gather(numDigits=4, action="/dial_extension", method="GET") as g:
 			g.say("Please dial your four digit extension now.", voice='alice', language="en-US")
 	else:
-		database = EHHOPdb(credentials)
-		return_num = database.lookup_phone_by_extension(dialed_ext)
-		if return_num == None:
-			resp.say("I'm sorry, I couldn't find that extension.")
-			resp.pause(3)
-			with resp.gather(numDigits=4, action="/dial_extension", method="GET") as g:
-				g.say("Please dial your four digit extension now.", voice='alice', language="en-US")
-		else:
-			resp.say("Connecting you with " + return_num[0], voice='alice', language='en-US')
-			resp.pause(3)
-			resp.dial("+1" + return_num[1], callerId='+18622425952')
-			resp.say("I'm sorry, but your call either failed or may have been cut short. Goodbye!", voice='alice', language='en-US')
+		resp.say("Connecting you with " + return_num[0], voice='alice', language='en-US')
+		resp.pause(length=3)
+		resp.dial(return_num[1], callerId='+18622425952')
+		resp.say("I'm sorry, but your call either failed or may have been cut short. Goodbye!", voice='alice', language='en-US')
 	return str(resp)
 	
 @app.route("/handle_key/clinic_open_menu", methods=["GET", "POST"])

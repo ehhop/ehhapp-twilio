@@ -1,7 +1,7 @@
 import json, re
 import gspread
 from oauth2client.client import SignedJwtAssertionCredentials
-execfile("params.conf")
+execfile(os.path.dirname(os.path.realpath(__file__)) + "/params.conf")
 
 json_key = json.load(open(google_oauth2_file))
 scope = ['https://spreadsheets.google.com/feeds']
@@ -40,7 +40,6 @@ class EHHOPdb:
 		for record in self.personnel:
 			if ext == record['Extension']:
 				return [record['Name'], '+1' + self.sanitize.sub('', record['Telephone'])] # if we found the extension
-		return None # if no return
 
 	def lookup_phone_by_name(self, name):
 		#get matching extension (O(N) time lookup...)
