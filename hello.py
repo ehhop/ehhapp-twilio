@@ -2,8 +2,11 @@ import sys, os, pytz, re
 from datetime import datetime, timedelta
 from SOAPpy import WSDL
 from flask import Flask, request, redirect
-execfile(os.path.dirname(os.path.realpath(__file__)) + "/gdatabase.py")
 import twilio.twiml
+
+base_dir = os.path.dirname(os.path.realpath(__file__))
+execfile(base_dir + "/gdatabase.py")
+execfile(base_dir + "/email_helper.py")
 
 wsdlfile='http://phone.ehhapp.org/services.php?wsdl'
 
@@ -243,11 +246,10 @@ def handle_recording(intent, ani, satdate):
 	
 	resp = twilio.twiml.Response()
 	recording_url = request.values.get("RecordingUrl", None)
-	
+
 	# send the notification to the server
-	server = WSDL.Proxy(wsdlfile)
-	vm_alert = server.voicemail_alert(intention=intent, ani=ani, nearest_saturday=satdate, recording_url=recording_url)
-	
+	send_email(recording_url, intent, ani, satdate)
+
 	###if the message was successfully sent... TODO to check
 	# Your message was sent. Thank you for contacting EHHOP. Goodbye!
 	resp.play("https://s3.amazonaws.com/ehhapp-phone/sent_message.mp3")
@@ -407,10 +409,16 @@ def sp_handle_recording(intent, ani, satdate):
 	recording_url = request.values.get("RecordingUrl", None)
 	
 	# send the notification to the server
-	server = WSDL.Proxy(wsdlfile)
-	vm_alert = server.voicemail_alert(intention=intent, ani=ani, nearest_saturday=satdate, recording_url=recording_url)
+        send_email(recording_url, intent, ani, satdate)	
 	
 	###if the message was successfully sent... TODO to check
 	# Your message was sent. Thank you for contacting EHHOP. Goodbye!
 	resp.play("https://s3.amazonaws.com/ehhapp-phone/sp_sent_message.mp3")
 	return str(resp)
+
+#=====================
+
+if __name__ == '__main__':
+	app.debug = True
+	app.run()
+
