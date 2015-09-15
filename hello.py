@@ -236,7 +236,7 @@ def take_message(intent):
 		#Please leave a message for us after the tone. We will call you back within one day.
 		resp.play("https://s3.amazonaws.com/ehhapp-phone/nonurgent_message.mp3")
 	resp.play("https://s3.amazonaws.com/ehhapp-phone/vm_instructions.mp3")
-	resp.record(maxLength=300, action=after_record, transcribe='true')
+	resp.record(maxLength=300, action=after_record)
 	
 	return str(resp)
 
@@ -397,7 +397,7 @@ def sp_take_message(intent):
 		#spanish: Please leave a message for us after the tone. We will call you back within one day.
 		resp.play("https://s3.amazonaws.com/ehhapp-phone/sp_nonurgent_message.mp3")
 	resp.play("https://s3.amazonaws.com/ehhapp-phone/sp_vm_instructions.mp3")
-	resp.record(maxLength=300, action=after_record, transcribe='true')
+	resp.record(maxLength=300, action=after_record)
 	
 	return str(resp)
 
