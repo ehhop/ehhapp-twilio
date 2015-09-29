@@ -1,4 +1,4 @@
-import pytz, smtplib, requests, shutil, random, string, re
+import pytz, smtplib, requests, shutil, random, string, re, os, ftplib
 from datetime import datetime, timedelta
 from email.mime.text import MIMEText
 from requests.auth import HTTPBasicAuth
@@ -32,12 +32,21 @@ def send_email(recording_name, intent, ani):
 def save_file(recording_url, auth_method):
 	save_name = randomword(128) + ".wav" # hopefully no collisions
 	# we are now using HTTP basic auth to do the downloads
+	# step 1 - download the file from Twilio to RAM
 	response = requests.get(recording_url, stream=True, auth=auth_method)
-	with open(base_dir + "/recordings/" + save_name, 'wb') as out_file:
+	with open("/dev/shm/" + save_name, 'wb') as out_file:
 			shutil.copyfileobj(response.raw, out_file)
 	del response
+	
+	# step 2 - copy the file from RAM to HIPAA Box account and clear from RAM on complete
+	session = ftplib.FTP('ftp.box.com', box_username, box_password)
+	ram_file = open('/dev/shm/' + save_name, 'rb')
+	session.storbinary('STOR recordings/' + save_name, ram_file)
+	ram_file.close()
+	session.quit()
+	os.remove('/dev/shm/' + save_name)
 
-	# delete the recording off the server - IMPORTANT
+	# step 3 - delete the recording from Twilio - IMPORTANT
 	client = TwilioRestClient(twilio_AccountSID, twilio_AuthToken)
 	recording_sid = recording_url.split("/")[-1]
 	client.recordings.delete(recording_sid)

@@ -10,6 +10,11 @@ amion_worksheet_schedule = '' # current schedule
 twilio_AccountSID = '' ######
 twilio_AuthToken = '' ######
 
+# box username and password
+# for Box access
+box_username = "" # email
+box_password = "" # box external password
+
 #places where emails from VM system should be sent
 it_emails = ['ryan.neff@icahn.mssm.edu']
 
@@ -21,7 +26,7 @@ intentions = {  '1': 'patient coming in TODAY',
 		'4': 'ESTABLISHED patient' }
 
 player_url = 'http://phone.ehhapp.org/player_twilio.php?a='
-recordings_base = 'http://twilio.ehhapp.org/recordings/'
+recordings_base = 'http://twilio.ehhapp.org/play_recording?filename='
 from_email = 'ehhapp.twilio@ehhapp.org'
 
 email_template = '''This message can be played from the following URL:

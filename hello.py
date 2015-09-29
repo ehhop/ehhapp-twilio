@@ -1,7 +1,7 @@
-import sys, os, pytz, re
+import sys, os, pytz, re, ftplib
 from datetime import datetime, timedelta
 from SOAPpy import WSDL
-from flask import Flask, request, redirect
+from flask import Flask, request, redirect, send_from_directory
 import twilio.twiml
 
 base_dir = os.path.dirname(os.path.realpath(__file__))
@@ -371,6 +371,31 @@ def sp_handle_recording(intent):
 	resp.play("https://s3.amazonaws.com/ehhapp-phone/sp_sent_message.mp3")
 	return str(resp)
 
+#==============SERVE VOICEMAILS============
+
+@app.route('/play_recording', methods=['GET', 'POST'])
+def play_vm_recording():
+        ''' plays a voicemail recording from the Box server'''
+        filename = request.values.get('filename', None)
+	# check that filename attribute was set, else return None
+	if filename == None:
+		return "Need to specify a filename.", 400
+
+	# sterilize filename to prevent attacks
+	safe_char = re.compile(r'[^\w.]+') # only alphanumeric and periods
+	filename = safe_char.sub('', filename)
+	
+	# download file to RAM
+	session = ftplib.FTP('ftp.box.com', box_username, box_password)
+	tmp_file = open('/dev/shm/' + filename, 'wb')
+	session.retrbinary('RETR recordings/' + filename, tmp_file.write)
+	tmp_file.close()
+	session.close()
+	#return "File not found.", 404
+	
+	# serve file
+	return send_from_directory('/dev/shm/', filename, cache_timeout = 0)
+
 #==============OTHER HELPERS===============
 
 def getSatDate():
@@ -399,6 +424,7 @@ def getOnCallPhoneNum():
 		oncall_current_phone = fallback_phone
 	return oncall_current_phone
 
+#============MUST BE LAST LINE================
 if __name__ == '__main__':
 	app.debug = True
 	app.run()
