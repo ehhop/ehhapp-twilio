@@ -135,23 +135,10 @@ def clinic_open_menu():
 	'''
 	resp = twilio.twiml.Response()
 	digit = request.values.get('Digits', None)
-	
-	# get next saturday's date
-	time_now = datetime.now(pytz.timezone('US/Eastern'))
-	day_of_week = time_now.weekday()
-	addtime = None
-	if day_of_week == 6:
-		addtime=timedelta(6)
-	else:
-		addtime=timedelta(5-day_of_week)
-	satdate = (time_now+addtime).strftime('%Y-%m-%d')
-	
-	# get the phone # of the on call
-	server = WSDL.Proxy(wsdlfile)
-	oncall_phone_unsan = server.get_oncall_CM_phone(nearest_saturday=satdate).strip('-')
-	d = re.compile(r'[^\d]+')
-	oncall_current_phone = '+1' + d.sub('', oncall_phone_unsan)
-	
+
+	# get the phone # of the on call - fallback if something wrong
+	oncall_current_phone = getOnCallPhoneNum()
+
 	# appointment today
 	if digit == '1':
 		# now transferring your call
@@ -209,25 +196,8 @@ def clinic_closed_menu():
 @app.route("/take_message/<intent>", methods=['GET', 'POST'])
 def take_message(intent):
 	'''takes a voice message and passes it to the voicemail server'''
-	# variables we need to set:
-	# satdate - next saturday's date as yyyy-MM-dd
-	# caller id - the number the call is coming from
 	
 	resp = twilio.twiml.Response()
-	
-	# get next saturday's date
-	time_now = datetime.now(pytz.timezone('US/Eastern'))
-	day_of_week = time_now.weekday()
-	addtime = None
-	if day_of_week == 6:
-		addtime=timedelta(6)
-	else:
-		addtime=timedelta(5-day_of_week)
-	
-	satdate = (time_now+addtime).strftime('%Y-%m-%d')
-	caller_id = request.values.get('From', 'None')
-	
-	after_record = '/handle_recording/' + intent + '/' + caller_id + '/' + satdate	
 	
 	if intent == '3':
 		#Please leave a message for us after the tone. We will call you back as soon as possible.
@@ -235,20 +205,24 @@ def take_message(intent):
 	if intent in ['2','4']:
 		#Please leave a message for us after the tone. We will call you back within one day.
 		resp.play("https://s3.amazonaws.com/ehhapp-phone/nonurgent_message.mp3")
+
 	resp.play("https://s3.amazonaws.com/ehhapp-phone/vm_instructions.mp3")
-	resp.record(maxLength=300, action=after_record)
-	
+
+	# after patient leaves message, direct them to next step
+	after_record = '/handle_recording/' + intent
+	resp.record(maxLength=300, action=after_record)	
+
 	return str(resp)
 
-@app.route("/handle_recording/<int:intent>/<ani>/<satdate>", methods=['GET', 'POST'])
-def handle_recording(intent, ani, satdate):
+@app.route("/handle_recording/<int:intent>", methods=['GET', 'POST'])
+def handle_recording(intent):
 	'''patient has finished leaving recording'''
-	
 	resp = twilio.twiml.Response()
+	ani = request.values.get('From', 'None')
 	recording_url = request.values.get("RecordingUrl", None)
 
-	# send the notification to the server
-	send_email(recording_url, intent, ani, satdate)
+	# process message (e.g. download and send emails)
+	process_recording(recording_url, intent, ani)
 
 	###if the message was successfully sent... TODO to check
 	# Your message was sent. Thank you for contacting EHHOP. Goodbye!
@@ -273,21 +247,29 @@ def caller_id_auth():
 
 @app.route("/caller_id_dial", methods=['GET','POST'])
 def caller_id_dial():
+	''' dials out from the EHHOP phone number'''
+
 	resp = twilio.twiml.Response()
 	number=request.values.get("Digits", None)
+
 	resp.say("Connecting you with your destination.", voice='alice')
 	resp.dial("+1" + number, callerId='+18622425952')
 	resp.say("I'm sorry, but your call either failed or may have been cut short.", voice='alice', language='en-US')
+
 	with resp.gather(numDigits=1, action='/caller_id_redial/' + number, method='GET') as g:
 		g.say("If you would like to try again, please press 1, otherwise, hang up now.", voice='alice', language='en-US')
+
 	return str(resp)
 	
 @app.route("/caller_id_redial/<number>", methods=['GET','POST'])
 def caller_id_redial(number):
+	'''redials a number dialed out by caller_id_dial - digits only dialed once'''
+
 	resp = twilio.twiml.Response()
 	resp.say("Connecting you with your destination.", voice='alice')
 	resp.dial("+1" + number, callerId='+18622425952')
 	resp.say("I'm sorry, but your call either failed or may have been cut short.", voice='alice', language='en-US')
+
 	with resp.gather(numDigits=1, action='/caller_id_redial/' + number, method='GET') as g:
 		g.say("If you would like to try again, please press 1, otherwise, hang up now.", voice='alice', language='en-US')
 	return str(resp)
@@ -305,21 +287,8 @@ def sp_clinic_open_menu():
 	resp = twilio.twiml.Response()
 	digit = request.values.get('Digits', None)
 	
-	# get next saturday's date
-	time_now = datetime.now(pytz.timezone('US/Eastern'))
-	day_of_week = time_now.weekday()
-	addtime = None
-	if day_of_week == 6:
-		addtime=timedelta(6)
-	else:
-		addtime=timedelta(5-day_of_week)
-	satdate = (time_now+addtime).strftime('%Y-%m-%d')
-	
-	# get the phone # of the on call
-	server = WSDL.Proxy(wsdlfile)
-	oncall_phone_unsan = server.get_oncall_CM_phone(nearest_saturday=satdate).strip('-')
-	d = re.compile(r'[^\d]+')
-	oncall_current_phone = '+1' + d.sub('', oncall_phone_unsan)
+	# get the phone # of the on call - fallback if something wrong
+	oncall_current_phone = getOnCallPhoneNum()
 	
 	# appointment today
 	if digit == '1':
@@ -370,25 +339,8 @@ def sp_clinic_closed_menu():
 @app.route("/sp/take_message/<intent>", methods=['GET', 'POST'])
 def sp_take_message(intent):
 	'''takes a voice message and passes it to the voicemail server'''
-	# variables we need to set:
-	# satdate - next saturday's date as yyyy-MM-dd
-	# caller id - the number the call is coming from
 	
 	resp = twilio.twiml.Response()
-	
-	# get next saturday's date
-	time_now = datetime.now(pytz.timezone('US/Eastern'))
-	day_of_week = time_now.weekday()
-	addtime = None
-	if day_of_week == 6:
-		addtime=timedelta(6)
-	else:
-		addtime=timedelta(5-day_of_week)
-	
-	satdate = (time_now+addtime).strftime('%Y-%m-%d')
-	caller_id = request.values.get('From', 'None')
-	
-	after_record = '/sp/handle_recording/' + intent + '/' + caller_id + '/' + satdate	
 	
 	if intent == '3':
 		#spanish: Please leave a message for us after the tone. We will call you back as soon as possible.
@@ -397,26 +349,55 @@ def sp_take_message(intent):
 		#spanish: Please leave a message for us after the tone. We will call you back within one day.
 		resp.play("https://s3.amazonaws.com/ehhapp-phone/sp_nonurgent_message.mp3")
 	resp.play("https://s3.amazonaws.com/ehhapp-phone/sp_vm_instructions.mp3")
+
+	# save recording after received at next step
+	after_record = '/sp/handle_recording/' + intent
 	resp.record(maxLength=300, action=after_record)
 	
 	return str(resp)
 
-@app.route("/sp/handle_recording/<int:intent>/<ani>/<satdate>", methods=['GET', 'POST'])
-def sp_handle_recording(intent, ani, satdate):
+@app.route("/sp/handle_recording/<int:intent>", methods=['GET', 'POST'])
+def sp_handle_recording(intent):
 	'''patient has finished leaving recording'''
-	
-	resp = twilio.twiml.Response()
-	recording_url = request.values.get("RecordingUrl", None)
-	
-	# send the notification to the server
-        send_email(recording_url, intent, ani, satdate)	
+        resp = twilio.twiml.Response()
+        ani = request.values.get('From', 'None')
+        recording_url = request.values.get("RecordingUrl", None)
+
+        # process message (e.g. download and send emails)
+        process_recording(recording_url, intent, ani)
 	
 	###if the message was successfully sent... TODO to check
 	# Your message was sent. Thank you for contacting EHHOP. Goodbye!
 	resp.play("https://s3.amazonaws.com/ehhapp-phone/sp_sent_message.mp3")
 	return str(resp)
 
-#=====================
+#==============OTHER HELPERS===============
+
+def getSatDate():
+        # get next saturday's date
+        time_now = datetime.now(pytz.timezone('US/Eastern'))
+        day_of_week = time_now.weekday()
+        addtime = None
+        if day_of_week == 6:
+                addtime=timedelta(6)
+        else:
+                addtime=timedelta(5-day_of_week)
+        satdate = (time_now+addtime).strftime('%Y-%m-%d')
+        return satdate
+
+def getOnCallPhoneNum():
+	# get next saturday's date
+	satdate = getSatDate()
+
+	# get the phone # of the on call - fallback if something wrong
+	try:
+	        server = WSDL.Proxy(wsdlfile)
+        	oncall_phone_unsan = server.get_oncall_CM_phone(nearest_saturday=satdate).strip('-')
+	        d = re.compile(r'[^\d]+')
+        	oncall_current_phone = '+1' + d.sub('', oncall_phone_unsan)
+	except:
+		oncall_current_phone = fallback_phone
+	return oncall_current_phone
 
 if __name__ == '__main__':
 	app.debug = True
