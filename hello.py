@@ -124,6 +124,24 @@ def dial_extension():
 		resp.dial(return_num[1], callerId='+18622425952')
 		resp.say("I'm sorry, but your call either failed or may have been cut short. Goodbye!", voice='alice', language='en-US')
 	return str(resp)
+
+@app.route("/next_clinic/<person_type>/", methods=["GET", "POST"])
+def find_in_schedule():
+	resp = twilio.twiml.Response()
+	database = EHHOPdb(credentials)
+	try:
+		return_num = database.lookup_name_in_schedule(person_type, getSatDate)
+	except:
+		resp.say("I'm sorry, please try your lookup again later.")
+		
+	if return_num == None:
+		resp.say("I'm sorry, I couldn't find that person.")
+	else:
+		resp.say("Connecting you with " + return_num[0], voice='alice', language='en-US')
+		resp.pause(length=3)
+		resp.dial(return_num[1], callerId='+18622425952')
+		resp.say("I'm sorry, but your call either failed or may have been cut short. Goodbye!", voice='alice', language='en-US')
+	return str(resp)
 	
 @app.route("/handle_key/clinic_open_menu", methods=["GET", "POST"])
 def clinic_open_menu():
