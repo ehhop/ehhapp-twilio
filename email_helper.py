@@ -65,7 +65,7 @@ def getSatDate():
                 addtime=timedelta(6)
         else:
                 addtime=timedelta(5-day_of_week)
-        satdate = (time_now+addtime).strftime('%Y-%m-%d')
+        satdate = (time_now+addtime).strftime('%m/%d/%Y')
 	return satdate
 
 

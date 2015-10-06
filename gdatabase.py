@@ -57,3 +57,11 @@ class EHHOPdb:
 				return [record[i] for i in keys if record[i] != '']
 		return [] # return empty list
 	
+	def lookup_name_by_position(self, person_type):
+		# get matching person
+		people = []
+		for record in self.personnel:
+			if person_type in record['Position']:
+				people.append([record['Name'], '+1' + self.sanitize.sub('', record['Telephone'])])
+		return people # return empty list
+

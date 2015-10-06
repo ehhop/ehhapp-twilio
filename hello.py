@@ -126,22 +126,51 @@ def dial_extension():
 	return str(resp)
 
 @app.route("/next_clinic/<person_type>/", methods=["GET", "POST"])
-def find_in_schedule():
+def find_in_schedule(person_type):
 	resp = twilio.twiml.Response()
 	database = EHHOPdb(credentials)
+	return_num = None
 	try:
-		return_num = database.lookup_name_in_schedule(person_type, getSatDate)
+		return_names = database.lookup_name_in_schedule(person_type, getSatDate())
+		if return_names != []:
+			return_num = database.lookup_phone_by_name(return_names[0])
 	except:
 		resp.say("I'm sorry, please try your lookup again later.")
+		return str(resp)
 		
-	if return_num == None:
+	if return_names == []:
 		resp.say("I'm sorry, I couldn't find that person.")
 	else:
-		resp.say("Connecting you with " + return_num[0], voice='alice', language='en-US')
-		resp.pause(length=3)
-		resp.dial(return_num[1], callerId='+18622425952')
+		for name in return_names:
+			return_num = database.lookup_phone_by_name(name)
+			if return_num != None:
+				resp.say("Connecting you with " + name, voice='alice', language='en-US')
+				resp.pause(length=3)
+				resp.dial(return_num, callerId='+18622425952')
 		resp.say("I'm sorry, but your call either failed or may have been cut short. Goodbye!", voice='alice', language='en-US')
 	return str(resp)
+
+@app.route("/find_person/<person_type>/", methods=["GET", "POST"])
+def find_person(person_type):
+        resp = twilio.twiml.Response()
+        database = EHHOPdb(credentials)
+        return_num = None
+        try:
+                return_nums = database.lookup_name_by_position(person_type)      
+        except:
+                resp.say("I'm sorry, please try your lookup again later.")
+                return str(resp)
+
+        if return_num == []:
+                resp.say("I'm sorry, I couldn't find that person.")
+        else:
+                for return_num in return_nums:
+                        if return_num != None:
+                                resp.say("Connecting you with " + return_num[0], voice='alice', language='en-US')
+                                resp.pause(length=3)
+                                resp.dial(return_num[1], callerId='+18622425952')
+                resp.say("I'm sorry, but your call either failed or may have been cut short. Goodbye!", voice='alice', language='en-US')
+        return str(resp)
 	
 @app.route("/handle_key/clinic_open_menu", methods=["GET", "POST"])
 def clinic_open_menu():
@@ -425,7 +454,7 @@ def getSatDate():
                 addtime=timedelta(6)
         else:
                 addtime=timedelta(5-day_of_week)
-        satdate = (time_now+addtime).strftime('%Y-%m-%d')
+        satdate = (time_now+addtime).strftime('%m/%d/%Y')
         return satdate
 
 def getOnCallPhoneNum():
