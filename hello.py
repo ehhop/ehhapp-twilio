@@ -1,7 +1,7 @@
 import sys, os, pytz, re, ftplib
 from datetime import datetime, timedelta
 from SOAPpy import WSDL
-from flask import Flask, request, redirect, send_from_directory, Response
+from flask import Flask, request, redirect, send_from_directory, Response, stream_with_context
 import twilio.twiml
 
 base_dir = os.path.dirname(os.path.realpath(__file__))
@@ -434,12 +434,15 @@ def play_vm_recording():
 	
 	def get_file(filename):
 		# get file
+		chunks = []
 		session = ftplib.FTP('ftp.box.com', box_username, box_password)
-		session.retrbinary('RETR recordings/' + filename, lambda chunk: (yield chunk))
+		session.retrbinary('RETR recordings/' + filename, chunks.append)
 		session.close()
+		for chunk in chunks:
+			yield chunk
 	
 	# serve file
-	return Response(get_file(), mimetype='audio/wav')
+	return Response(get_file(filename), mimetype='audio/wav')
 
 #==============OTHER HELPERS===============
 
