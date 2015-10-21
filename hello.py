@@ -1,7 +1,7 @@
 import sys, os, pytz, re, ftplib
 from datetime import datetime, timedelta
 from SOAPpy import WSDL
-from flask import Flask, request, redirect, send_from_directory
+from flask import Flask, request, redirect, send_from_directory, Response
 import twilio.twiml
 
 base_dir = os.path.dirname(os.path.realpath(__file__))
@@ -422,8 +422,8 @@ def sp_handle_recording(intent):
 
 @app.route('/play_recording', methods=['GET', 'POST'])
 def play_vm_recording():
-        ''' plays a voicemail recording from the Box server'''
-        filename = request.values.get('filename', None)
+	''' plays a voicemail recording from the Box server'''
+	filename = request.values.get('filename', None)
 	# check that filename attribute was set, else return None
 	if filename == None:
 		return "Need to specify a filename.", 400
@@ -432,16 +432,14 @@ def play_vm_recording():
 	safe_char = re.compile(r'[^\w.]+') # only alphanumeric and periods
 	filename = safe_char.sub('', filename)
 	
-	# download file to RAM
-	session = ftplib.FTP('ftp.box.com', box_username, box_password)
-	tmp_file = open('/dev/shm/' + filename, 'wb')
-	session.retrbinary('RETR recordings/' + filename, tmp_file.write)
-	tmp_file.close()
-	session.close()
-	#return "File not found.", 404
+	def get_file(filename):
+		# get file
+		session = ftplib.FTP('ftp.box.com', box_username, box_password)
+		session.retrbinary('RETR recordings/' + filename, lambda chunk: yield chunk)
+		session.close()
 	
 	# serve file
-	return send_from_directory('/dev/shm/', filename, cache_timeout = 0)
+	return Response(get_file(), mimetype='audio/wav')
 
 #==============OTHER HELPERS===============
 
