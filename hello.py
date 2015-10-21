@@ -30,7 +30,7 @@ def hello_ehhop():
 	#of Medicine at Mount Sinai. 
 
 	resp = twilio.twiml.Response()
-	with resp.gather(numDigits=1, action="/handle_key/hello", method="GET") as g:
+	with resp.gather(numDigits=1, action="/handle_key/hello", method="POST") as g:
 		for i in range(0,3):
 			g.play("https://s3.amazonaws.com/ehhapp-phone/welcome_greeting_ehhop.mp3")
 			g.pause(length=5)
@@ -47,7 +47,7 @@ def handle_key_hello():
 	if digit == '1':
 		'''instructions in english selected'''
 		if day_of_week == 5: #clinic is open on Saturdays
-			with resp.gather(numDigits=1, action="/handle_key/clinic_open_menu", method="GET") as g:
+			with resp.gather(numDigits=1, action="/handle_key/clinic_open_menu", method="POST") as g:
 				
 				#If you have an appointment today, please press 1. 
 				#If you have not been to EHHOP before, please press 2.
@@ -58,7 +58,7 @@ def handle_key_hello():
 					g.play("https://s3.amazonaws.com/ehhapp-phone/clinic_open_menu.mp3")
 					g.pause(length=5)
 		else:
-			with resp.gather(numDigits=1, action="/handle_key/clinic_closed_menu", method="GET") as g:
+			with resp.gather(numDigits=1, action="/handle_key/clinic_closed_menu", method="POST") as g:
 				
 				#If you have not been to EHHOP before, please press 2.
 				#If you are an EHHOP patient and have an urgent medical concern, please press 3.
@@ -73,25 +73,25 @@ def handle_key_hello():
 		# spanish: if this is an emerg, dial 911
 		resp.play('https://s3.amazonaws.com/ehhapp-phone/sp_emerg_911.mp3')
 		if day_of_week == 5: #clinic is open on Saturdays
-			with resp.gather(numDigits=1, action="/handle_key/sp/clinic_open_menu", method="GET") as g:
+			with resp.gather(numDigits=1, action="/handle_key/sp/clinic_open_menu", method="POST") as g:
 				# spanish: list options 1-4 similar to english
 				for i in range(0,3):
 					g.play('https://s3.amazonaws.com/ehhapp-phone/sp_clinic_open_menu.mp3')
 					g.pause(length=5)
 		else: #clinic not open
-			with resp.gather(numDigits=1, action="/handle_key/sp/clinic_closed_menu", method="GET") as g:
+			with resp.gather(numDigits=1, action="/handle_key/sp/clinic_closed_menu", method="POST") as g:
 				# spanish: list options 2-4 similar to english
 				for i in range(0,3):
 					g.play('https://s3.amazonaws.com/ehhapp-phone/sp_clinic_closed_menu.mp3')
 					g.pause(length=5)
 	elif digit == "3": 
 		'''extension feature'''
-		with resp.gather(numDigits=4, action="/dial_extension", method="GET") as g:
+		with resp.gather(numDigits=4, action="/dial_extension", method="POST") as g:
 			g.say("Please dial your four digit extension now.", voice='alice', language="en-US")
 		
 	elif digit == '*':
 		'''caller id feature'''
-		with resp.gather(numDigits=8, action='/caller_id_auth', method='GET') as g:
+		with resp.gather(numDigits=8, action='/caller_id_auth', method="POST") as g:
 			g.say("Please enter your passcode.", voice='alice')
 	
 	else:
@@ -110,13 +110,13 @@ def dial_extension():
 	except:
 		resp.say("I'm sorry, I couldn't find that extension.")
 		resp.pause(length=3)
-		with resp.gather(numDigits=4, action="/dial_extension", method="GET") as g:
+		with resp.gather(numDigits=4, action="/dial_extension", method="POST") as g:
 			g.say("Please dial your four digit extension now.", voice='alice', language="en-US")
 		return str(resp)
 	if return_num == None:
 		resp.say("I'm sorry, I couldn't find that extension.")
 		resp.pause(length=3)
-		with resp.gather(numDigits=4, action="/dial_extension", method="GET") as g:
+		with resp.gather(numDigits=4, action="/dial_extension", method="POST") as g:
 			g.say("Please dial your four digit extension now.", voice='alice', language="en-US")
 	else:
 		resp.say("Connecting you with " + return_num[0], voice='alice', language='en-US')
@@ -195,7 +195,7 @@ def clinic_open_menu():
 		# if the call fails
 		resp.say("All clinicians are busy at the moment. Please try again.", voice='alice', language='en-US')
 		# replay initial menu
-		with resp.gather(numDigits=1, action="/handle_key/clinic_open_menu", method="GET") as g:
+		with resp.gather(numDigits=1, action="/handle_key/clinic_open_menu", method="POST") as g:
 				#If you have an appointment today, please press 1. 
 				#If you have not been to EHHOP before, please press 2.
 				#If you are an EHHOP patient and have an urgent medical concern, please press 3.
@@ -210,7 +210,7 @@ def clinic_open_menu():
 	else:
 		resp.say("I'm sorry, but you have pressed an incorrect key.", voice='alice', language='en-US')
 		resp.pause(length=3)
-		with resp.gather(numDigits=1, action="/handle_key/clinic_open_menu", method="GET") as g:
+		with resp.gather(numDigits=1, action="/handle_key/clinic_open_menu", method="POST") as g:
 			#If you have an appointment today, please press 1. 
 			#If you have not been to EHHOP before, please press 2.
 			#If you are an EHHOP patient and have an urgent medical concern, please press 3.
@@ -231,7 +231,7 @@ def clinic_closed_menu():
 	else:
 		resp.say("I'm sorry, but you have pressed an incorrect key.", voice='alice', language='en-US')
 		resp.pause(length=3)
-		with resp.gather(numDigits=1, action="/handle_key/clinic_closed_menu", method="GET") as g: 
+		with resp.gather(numDigits=1, action="/handle_key/clinic_closed_menu", method="POST") as g: 
 			#If you have not been to EHHOP before, please press 2.
 			#If you are an EHHOP patient and have an urgent medical concern, please press 3.
 			#If you are an EHHOP patient and have a question about medications, appointments, 
@@ -257,7 +257,7 @@ def take_message(intent):
 
 	# after patient leaves message, direct them to next step
 	after_record = '/handle_recording/' + intent
-	resp.record(maxLength=300, action=after_record)	
+	resp.record(maxLength=300, action=after_record, method="POST")	
 
 	return str(resp)
 
@@ -283,12 +283,12 @@ def caller_id_auth():
 	
 	if passcode == '12345678':
 		#success
-		with resp.gather(numDigits=10, action='/caller_id_dial', method='GET') as g:
+		with resp.gather(numDigits=10, action='/caller_id_dial', method='POST') as g:
 			g.say("Please enter the ten-digit phone number you wish to call, starting with the area code", voice='alice')
 		return str(resp)
 	else:
 		resp.say("I'm sorry, that passcode is incorrect.", voice='alice')
-		with resp.gather(numDigits=8, action='/caller_id_auth', method='GET') as g:
+		with resp.gather(numDigits=8, action='/caller_id_auth', method='POST') as g:
 			g.say("Please enter your passcode.", voice='alice')
 		return str(resp)
 
@@ -303,7 +303,7 @@ def caller_id_dial():
 	resp.dial("+1" + number, callerId='+18622425952')
 	resp.say("I'm sorry, but your call either failed or may have been cut short.", voice='alice', language='en-US')
 
-	with resp.gather(numDigits=1, action='/caller_id_redial/' + number, method='GET') as g:
+	with resp.gather(numDigits=1, action='/caller_id_redial/' + number, method='POST') as g:
 		g.say("If you would like to try again, please press 1, otherwise, hang up now.", voice='alice', language='en-US')
 
 	return str(resp)
@@ -317,7 +317,7 @@ def caller_id_redial(number):
 	resp.dial("+1" + number, callerId='+18622425952')
 	resp.say("I'm sorry, but your call either failed or may have been cut short.", voice='alice', language='en-US')
 
-	with resp.gather(numDigits=1, action='/caller_id_redial/' + number, method='GET') as g:
+	with resp.gather(numDigits=1, action='/caller_id_redial/' + number, method='POST') as g:
 		g.say("If you would like to try again, please press 1, otherwise, hang up now.", voice='alice', language='en-US')
 	return str(resp)
 
@@ -346,7 +346,7 @@ def sp_clinic_open_menu():
 		# if the call fails
 		resp.play("https://s3.amazonaws.com/ehhapp-phone/sp_try_again.mp3")
 		# replay initial menu
-		with resp.gather(numDigits=1, action="/handle_key/sp/clinic_open_menu", method="GET") as g:
+		with resp.gather(numDigits=1, action="/handle_key/sp/clinic_open_menu", method="POST") as g:
 			# spanish: list options 1-4 similar to english
 			for i in range(0,3):
 				g.play('https://s3.amazonaws.com/ehhapp-phone/sp_clinic_open_menu.mp3')
@@ -358,7 +358,7 @@ def sp_clinic_open_menu():
 	else:
 		resp.play("https://s3.amazonaws.com/ehhapp-phone/sp_incorrect_key.mp3")
 		resp.pause(length=3)
-		with resp.gather(numDigits=1, action="/handle_key/sp/clinic_open_menu", method="GET") as g:
+		with resp.gather(numDigits=1, action="/handle_key/sp/clinic_open_menu", method="POST") as g:
 			# spanish: list options 1-4 similar to english
 			for i in range(0,3):
 				g.play('https://s3.amazonaws.com/ehhapp-phone/sp_clinic_open_menu.mp3')
@@ -376,7 +376,7 @@ def sp_clinic_closed_menu():
 	else:
 		resp.play("https://s3.amazonaws.com/ehhapp-phone/sp_incorrect_key.mp3")
 		resp.pause(length=3)
-		with resp.gather(numDigits=1, action="/handle_key/sp/clinic_closed_menu", method="GET") as g:
+		with resp.gather(numDigits=1, action="/handle_key/sp/clinic_closed_menu", method="POST") as g:
 			# spanish: list options 2-4 similar to english
 			for i in range(0,3):
 				g.play('https://s3.amazonaws.com/ehhapp-phone/sp_clinic_closed_menu.mp3')
@@ -399,7 +399,7 @@ def sp_take_message(intent):
 
 	# save recording after received at next step
 	after_record = '/sp/handle_recording/' + intent
-	resp.record(maxLength=300, action=after_record)
+	resp.record(maxLength=300, action=after_record, method="POST")
 	
 	return str(resp)
 
