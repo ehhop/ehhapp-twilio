@@ -435,7 +435,7 @@ def play_vm_recording():
 	def get_file(filename):
 		# get file
 		session = ftplib.FTP('ftp.box.com', box_username, box_password)
-		session.retrbinary('RETR recordings/' + filename, lambda chunk: yield chunk)
+		session.retrbinary('RETR recordings/' + filename, lambda chunk: (yield chunk))
 		session.close()
 	
 	# serve file
