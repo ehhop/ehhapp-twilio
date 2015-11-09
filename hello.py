@@ -90,8 +90,8 @@ def handle_key_hello():
 			g.say("Please dial your four digit extension now.", voice='alice', language="en-US")
 		
 	elif digit == '*':
-		'''caller id feature'''
-		with resp.gather(numDigits=8, action='/caller_id_auth', method="POST") as g:
+		'''auth menu'''
+		with resp.gather(numDigits=8, action='/auth_menu', method="POST") as g:
 			g.say("Please enter your passcode.", voice='alice')
 	
 	else:
@@ -276,21 +276,42 @@ def handle_recording(intent):
 	resp.play("https://s3.amazonaws.com/ehhapp-phone/sent_message.mp3")
 	return str(resp)
 
-@app.route("/caller_id_auth", methods=['GET','POST'])
-def caller_id_auth():
+
+@app.route("/auth_menu", methods=['GET','POST'])
+def auth_menu():
 	resp = twilio.twiml.Response()
 	passcode=request.values.get("Digits", None)
 	
 	if passcode == '12345678':
 		#success
-		with resp.gather(numDigits=10, action='/caller_id_dial', method='POST') as g:
-			g.say("Please enter the ten-digit phone number you wish to call, starting with the area code", voice='alice')
+		with resp.gather(numDigits=1, action='/auth_selection', method='POST') as g:
+			g.say("To dial a patient using the EHHOP number, please press 1. To leave a secure message for a patient, please press 2.", voice='alice')
 		return str(resp)
 	else:
 		resp.say("I'm sorry, that passcode is incorrect.", voice='alice')
-		with resp.gather(numDigits=8, action='/caller_id_auth', method='POST') as g:
+		with resp.gather(numDigits=8, action='/auth_menu', method='POST') as g:
 			g.say("Please enter your passcode.", voice='alice')
 		return str(resp)
+
+@app.route("/auth_selection", methods=['GET','POST'])
+def auth_selection():
+	resp = twilio.twiml.Response()
+	digit = request.values.get("Digits", None)
+
+	if digit == '1':
+		with resp.gather(numDigits=10, action='/caller_id_dial', method='POST') as g:
+			g.say("Please enter the ten-digit phone number you wish to call, starting with the area code", voice='alice')
+		return str(resp)
+	elif digit == '2':
+		with resp.gather(numDigits=10, action='/send_secure_message', method='POST') as g:
+			g.say("Please enter the ten-digit phone number you wish to send a message to, starting with the area code", voice='alice')
+		return str(resp)
+	else:
+		resp.say("I didn't catch that.")
+		with resp.gather(numDigits=1, action='/auth_selection', method='POST') as g:
+                        g.say("To dial a patient using the EHHOP number, please press 1. To leave a s$
+                return str(resp)
+
 
 @app.route("/caller_id_dial", methods=['GET','POST'])
 def caller_id_dial():
