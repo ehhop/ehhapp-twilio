@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from SOAPpy import WSDL
 from flask import Flask, request, redirect, send_from_directory, Response, stream_with_context
 import twilio.twiml
+from celery import Celery
 
 base_dir = os.path.dirname(os.path.realpath(__file__))
 execfile(base_dir + "/gdatabase.py")
@@ -11,6 +12,11 @@ execfile(base_dir + "/email_helper.py")
 wsdlfile='http://phone.ehhapp.org/services.php?wsdl'
 
 app = Flask(__name__, static_folder='')
+app.config['CELERY_BROKER_URL'] = 'redis://localhost:6379/0'
+app.config['CELERY_RESULT_BACKEND'] = 'redis://localhost:6379/0'
+
+celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
+celery.conf.update(app.config)
 
 @app.route('/', methods=['GET', 'POST'])
 def hello_ehhop():
@@ -268,14 +274,13 @@ def handle_recording(intent):
 	ani = request.values.get('From', 'None')
 	recording_url = request.values.get("RecordingUrl", None)
 
-	# process message (e.g. download and send emails)
-	process_recording(recording_url, intent, ani)
+	# process message asynchronously (e.g. download and send emails) using Celery
+	async_process_message.delay(recording_url, intent, ani)
 
 	###if the message was successfully sent... TODO to check
 	# Your message was sent. Thank you for contacting EHHOP. Goodbye!
 	resp.play("https://s3.amazonaws.com/ehhapp-phone/sent_message.mp3")
 	return str(resp)
-
 
 @app.route("/auth_menu", methods=['GET','POST'])
 def auth_menu():
@@ -432,7 +437,7 @@ def sp_handle_recording(intent):
         recording_url = request.values.get("RecordingUrl", None)
 
         # process message (e.g. download and send emails)
-        process_recording(recording_url, intent, ani)
+	async_process_message.delay(recording_url, intent, ani)
 	
 	###if the message was successfully sent... TODO to check
 	# Your message was sent. Thank you for contacting EHHOP. Goodbye!
@@ -493,6 +498,24 @@ def getOnCallPhoneNum():
 		oncall_current_phone = fallback_phone
 	return oncall_current_phone
 
+#==============BACKGROUND TASKS==============
+@celery.task
+def async_process_message(recording_url, intent, ani)
+	process_recording(recording_url, intent, ani)
+	return None
+
+#@celery.task
+#def appointment_reminder(appointment_id):
+#	try:
+#		appointment = db.session.query(Appointment).filter_by(id=appointment.id).one()
+#	except NoResultFound:
+#		return
+#
+#	call = client.calls.create(
+#		to = appointment.phone_number,
+#		from_ = twilio_number,
+#	)
+#	call.sid
 #============MUST BE LAST LINE================
 if __name__ == '__main__':
 	app.debug = True
