@@ -14,6 +14,7 @@ def process_recording(recording_url, intent, ani, auth_method=auth_combo):
 	satdate = getSatDate()
 	recording_name = save_file(recording_url, auth_method)
 	send_email(recording_name, intent, ani)
+	delete_file(recording_url)
 	return None
 
 def send_email(recording_name, intent, ani):
@@ -41,13 +42,14 @@ def save_file(recording_url, auth_method):
 	# step 3 - cleanup
 	session.quit()
 	del response
+	return save_name
 
-	# step 3 - delete the recording from Twilio - IMPORTANT
+def delete_file(recording_url):
+	# delete the recording from Twilio - IMPORTANT
 	client = TwilioRestClient(twilio_AccountSID, twilio_AuthToken)
 	recording_sid = recording_url.split("/")[-1]
 	client.recordings.delete(recording_sid)
-	
-	return save_name
+	return None
 
 def randomword(length):
 	return ''.join(random.choice(string.lowercase) for i in range(length))

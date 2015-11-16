@@ -1,5 +1,6 @@
+import dataset
 import sys, os, pytz, re, ftplib
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date, time
 from SOAPpy import WSDL
 from flask import Flask, request, redirect, send_from_directory, Response, stream_with_context
 import twilio.twiml
@@ -9,14 +10,21 @@ base_dir = os.path.dirname(os.path.realpath(__file__))
 execfile(base_dir + "/gdatabase.py")
 execfile(base_dir + "/email_helper.py")
 
+from twilio.rest import TwilioRestClient
+client = TwilioRestClient(twilio_AccountSID, twilio_AuthToken)
+
 wsdlfile='http://phone.ehhapp.org/services.php?wsdl'
 
 app = Flask(__name__, static_folder='')
 app.config['CELERY_BROKER_URL'] = 'redis://localhost:6379/0'
 app.config['CELERY_RESULT_BACKEND'] = 'redis://localhost:6379/0'
+app.debug = True
 
 celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
 celery.conf.update(app.config)
+
+# user/pass to log into Twilio to retrieve files
+auth_combo=HTTPBasicAuth(twilio_AccountSID, twilio_AuthToken)
 
 @app.route('/', methods=['GET', 'POST'])
 def hello_ehhop():
@@ -282,71 +290,6 @@ def handle_recording(intent):
 	resp.play("https://s3.amazonaws.com/ehhapp-phone/sent_message.mp3")
 	return str(resp)
 
-@app.route("/auth_menu", methods=['GET','POST'])
-def auth_menu():
-	resp = twilio.twiml.Response()
-	passcode=request.values.get("Digits", None)
-	
-	if passcode == '12345678':
-		#success
-		with resp.gather(numDigits=1, action='/auth_selection', method='POST') as g:
-			g.say("To dial a patient using the EHHOP number, please press 1. To leave a secure message for a patient, please press 2.", voice='alice')
-		return str(resp)
-	else:
-		resp.say("I'm sorry, that passcode is incorrect.", voice='alice')
-		with resp.gather(numDigits=8, action='/auth_menu', method='POST') as g:
-			g.say("Please enter your passcode.", voice='alice')
-		return str(resp)
-
-@app.route("/auth_selection", methods=['GET','POST'])
-def auth_selection():
-	resp = twilio.twiml.Response()
-	digit = request.values.get("Digits", None)
-
-	if digit == '1':
-		with resp.gather(numDigits=10, action='/caller_id_dial', method='POST') as g:
-			g.say("Please enter the ten-digit phone number you wish to call, starting with the area code", voice='alice')
-		return str(resp)
-	elif digit == '2':
-		with resp.gather(numDigits=10, action='/send_secure_message', method='POST') as g:
-			g.say("Please enter the ten-digit phone number you wish to send a message to, starting with the area code", voice='alice')
-		return str(resp)
-	else:
-		resp.say("I didn't catch that.")
-		with resp.gather(numDigits=1, action='/auth_selection', method='POST') as g:
-                        g.say("To dial a patient using the EHHOP number, please press 1. To leave a s$
-                return str(resp)
-
-
-@app.route("/caller_id_dial", methods=['GET','POST'])
-def caller_id_dial():
-	''' dials out from the EHHOP phone number'''
-
-	resp = twilio.twiml.Response()
-	number=request.values.get("Digits", None)
-
-	resp.say("Connecting you with your destination.", voice='alice')
-	resp.dial("+1" + number, callerId='+18622425952')
-	resp.say("I'm sorry, but your call either failed or may have been cut short.", voice='alice', language='en-US')
-
-	with resp.gather(numDigits=1, action='/caller_id_redial/' + number, method='POST') as g:
-		g.say("If you would like to try again, please press 1, otherwise, hang up now.", voice='alice', language='en-US')
-
-	return str(resp)
-	
-@app.route("/caller_id_redial/<number>", methods=['GET','POST'])
-def caller_id_redial(number):
-	'''redials a number dialed out by caller_id_dial - digits only dialed once'''
-
-	resp = twilio.twiml.Response()
-	resp.say("Connecting you with your destination.", voice='alice')
-	resp.dial("+1" + number, callerId='+18622425952')
-	resp.say("I'm sorry, but your call either failed or may have been cut short.", voice='alice', language='en-US')
-
-	with resp.gather(numDigits=1, action='/caller_id_redial/' + number, method='POST') as g:
-		g.say("If you would like to try again, please press 1, otherwise, hang up now.", voice='alice', language='en-US')
-	return str(resp)
-
 ################# spanish path ###############
 
 @app.route("/handle_key/sp/clinic_open_menu", methods=["GET", "POST"])
@@ -470,6 +413,272 @@ def play_vm_recording():
 	# serve file
 	return Response(get_file(filename), mimetype='audio/wav')
 
+#==============authenticated menu============
+@app.route("/auth_menu", methods=['GET','POST'])
+def auth_menu():
+	resp = twilio.twiml.Response()
+	passcode=request.values.get("Digits", None)
+	
+	if passcode == '12345678':
+		#success
+		with resp.gather(numDigits=1, action='/auth_selection', method='POST') as g:
+			g.say("To dial a patient using the EHHOP number, please press 1. To leave a secure message for a patient, please press 2.", voice='alice')
+		return str(resp)
+	else:
+		resp.say("I'm sorry, that passcode is incorrect.", voice='alice')
+		with resp.gather(numDigits=8, action='/auth_menu', method='POST') as g:
+			g.say("Please enter your passcode.", voice='alice')
+		return str(resp)
+
+@app.route("/auth_selection", methods=['GET','POST'])
+def auth_selection():
+	resp = twilio.twiml.Response()
+	digit = request.values.get("Digits", None)
+
+	if digit == '1':
+		with resp.gather(numDigits=10, action='/caller_id_dial', method='POST') as g:
+			g.say("Please enter the ten-digit phone number you wish to call, starting with the area code", voice='alice')
+		return str(resp)
+	elif digit == '2':
+		with resp.gather(numDigits=10, action='/secure_message/setnum/', method='POST') as g:
+			g.say("Please enter the ten-digit phone number you wish to send a message to, starting with the area code", voice='alice')
+		return str(resp)
+	else:
+		resp.say("I didn't catch that.")
+		with resp.gather(numDigits=1, action='/auth_selection', method='POST') as g:
+			g.say("To dial a patient using the EHHOP number, please press 1. To leave a secure message for a patient, please press 2.", voice='alice')
+                return str(resp)
+
+@app.route("/secure_message/setnum/", methods=['GET', 'POST'])
+def secure_message_setnum():
+	''' creates a row in the database with a secure message ID and pt phone num
+	    still need to set the following:
+		reminder time (now, one day from now, or specify date)
+		reminder frequency (default = one day if they dont pick up)
+		message
+		recorded name
+		spanish?
+		passcode
+	'''
+	resp = twilio.twiml.Response()
+	number=request.values.get("Digits", None)
+	from_phone=request.values.get("From", None)
+	
+	db = open_db()	
+	r = db['reminders']
+	# add phone number to reminders, move to next step
+	remind_id = r.insert(dict(to_phone=number, 
+			from_phone=from_phone,
+			time=None,
+			freq=24,
+			message=None,
+			name=None,
+			passcode=None,
+			spanish=None))
+	
+	with resp.gather(numDigits=6, action='/secure_message/setpass/' + str(remind_id), method='POST') as g:
+		g.say("You dialed " + ' '.join(number) + '. ', voice='alice')
+		g.say("Please enter the patient's date of birth, using two digits for the month, day, and year.")
+	return str(resp)
+
+@app.route("/secure_message/setpass/<int:remind_id>", methods=['GET', 'POST'])
+def secure_message_setpass(remind_id):
+	''' sets the passcode from the last step and asks for a reminder time '''
+	resp = twilio.twiml.Response()
+	passcode=request.values.get("Digits", None)
+
+	db = open_db()	
+	r = db['reminders']
+
+	try:
+		# find the record in the DB that corresponds to this call
+		record = r.find_one(id=remind_id)
+	except:
+		resp.say("I am sorry, but I could not find a record in the database that matched that ID.")
+		return str(resp)
+
+	# set a passcode and update the DB
+	record['passcode'] = passcode
+	r.update(record, ['id'])
+
+	# ask for a reminder time
+	with resp.gather(numDigits=1, action='/secure_message/settime/' + str(remind_id), method='POST') as g:
+		g.say("You dialed " + ' '.join(passcode) + ".", voice="alice")
+		g.say("To send your message now, please press 1. To send your message tomorrow morning at 10 AM, please press 2.")
+	return str(resp)
+
+@app.route("/secure_message/settime/<int:remind_id>", methods=['GET', 'POST'])
+def secure_message_settime(remind_id):
+	''' sets the reminder time and asks for the message '''
+	resp = twilio.twiml.Response()
+	choice=request.values.get("Digits", None)
+
+	db = open_db()	
+	r = db['reminders']
+	try:
+		# find the record in the DB that corresponds to this call
+		record = r.find_one(id=remind_id)
+	except:
+		resp.say("I am sorry, but I could not find a record in the database that matched that ID.")
+		return str(resp)
+	
+	# set the reminder time delta
+	nowtime = datetime.now()
+	time_set = None
+	if choice == '2':
+		# set the time for tomorrow
+		time_set = datetime.combine(nowtime.date() + timedelta(1), time(10,0,0))
+	else:
+		# set the time as now
+		time_set = nowtime
+	
+	# set the reminder time and update the DB
+	record['time'] = str(time_set)
+        r.update(record, ['id'])
+	
+	# now we need to record the message
+	resp.say("Please leave your secure message after the tone, and press any number and hold as we process your message.")
+	resp.record(maxLength=300, action="/secure_message/setmessage/" + str(remind_id), method='POST')
+
+	return str(resp)
+
+@app.route("/secure_message/setmessage/<int:remind_id>", methods=['GET', 'POST'])
+def secure_message_setmessage(remind_id):
+	resp = twilio.twiml.Response()
+	recording_url = request.values.get("RecordingUrl", None)
+	
+	db = open_db()	
+	r = db['reminders']
+	try:
+		# find the record in the DB that corresponds to this call
+		record = r.find_one(id=remind_id)
+	except:
+		resp.say("I am sorry, but I could not find a record in the database that matched that ID.")
+		return str(resp)
+
+	# download the file to HIPAA box
+	save_name = save_file(recording_url, auth_combo)
+	# set the secure recording URL location
+	new_recording_url = 'https://twilio.ehhapp.org/play_recording?filename=' + save_name
+
+	# set the message url and update the db
+	record['message'] = new_recording_url
+        r.update(record, ['id'])	
+
+	with resp.gather(numDigits=1, action='/secure_message/send/' + str(remind_id), method='POST') as g:
+		g.say("Thank you. To confirm your secure message, press 1 at any time, otherwise hang up now. ")
+		g.say('Here is your secure message.')
+		g.play(new_recording_url)
+	return str(resp)
+
+@app.route("/secure_message/send/<int:remind_id>", methods=['GET', 'POST'])
+def secure_message_send(remind_id):
+	resp = twilio.twiml.Response()
+	choice=request.values.get("Digits", None)
+
+	db = open_db()	
+	r = db['reminders']
+	try:
+		# find the record in the DB that corresponds to this call
+		record = r.find_one(id=remind_id)
+	except:
+		resp.say("I am sorry, but I could not find a record in the database that matched that ID.")
+		return str(resp)
+	
+	# we should have everything now, so make a record in celery for a call out
+	set_async_message_deliver(record, remind_id)
+	
+	resp.say("Thank you. Your secure message has been sent and will be delivered soon. Goodbye!")
+	return str(resp)
+
+@app.route("/secure_message/callback/<int:remind_id>", methods=['GET', 'POST'])
+def secure_message_callback(remind_id):
+	resp = twilio.twiml.Response()
+
+	db = open_db()	
+	r = db['reminders']
+	try:
+		# find the record in the DB that corresponds to this call
+		record = r.find_one(id=remind_id)
+	except:
+		resp.say("Hello! You have an important message waiting for you from the EHHOP Clinic at Mount Sinai.")
+		resp.say("Please call EHHOP at 862-242-5952 to hear your message.")
+		return str(resp)
+	
+	with resp.gather(numDigits=1, action='/secure_message/passauth/' + str(remind_id), method='POST') as g:
+		g.say("Hello! You have an important message waiting for you from the e hop Clinic at Mount Sinai.")
+		g.say("Press any number to hear your message.")
+	return str(resp)		
+
+@app.route("/secure_message/passauth/<int:remind_id>", methods=['GET', 'POST'])
+def secure_message_passauth(remind_id):
+	resp = twilio.twiml.Response()
+	choice=request.values.get("Digits", None)
+
+	db = open_db()	
+	r = db['reminders']
+	try:
+		# find the record in the DB that corresponds to this call
+		record = r.find_one(id=remind_id)
+	except:
+		resp.say("We're sorry, but your message cannot be retrieved at this time.")
+		resp.say("Please call EHHOP at 862-242-5952 to hear your message.")
+		return str(resp)
+
+	with resp.gather(numDigits=6, action='/secure_message/playback/' + str(remind_id), method='POST') as g:
+		g.say("Please enter your date of birth, using two digits for the month, day, and year")
+		g.say("For instance, if your birthday is January 5th, 1980, then you would type 0 1, 0 5, 8 0.")
+	return str(resp)
+
+@app.route("/secure_message/playback/<int:remind_id>", methods=['GET', 'POST'])
+def secure_message_playback(remind_id):
+	resp = twilio.twiml.Response()
+	passcode=request.values.get("Digits", None)
+
+	db = open_db()	
+	r = db['reminders']
+	# find the record in the DB that corresponds to this call
+	record = r.find_one(id=remind_id)
+	
+	if record['passcode'] != passcode:
+		with resp.gather(numDigits=6, action='/secure_message/playback/' + str(remind_id), method='POST') as g:
+			g.say("We're sorry, but your passcode is incorrect.")
+			g.say("Please enter your date of birth, using two digits for the month, day, and year")
+		return str(resp)
+	else:
+		resp.say("Please wait to hear your secure message from EHHOP.")
+		resp.play(record['message'])
+		return str(resp)
+
+
+@app.route("/caller_id_dial", methods=['GET','POST'])
+def caller_id_dial():
+	''' dials out from the EHHOP phone number'''
+
+	resp = twilio.twiml.Response()
+	number=request.values.get("Digits", None)
+
+	resp.say("Connecting you with your destination.", voice='alice')
+	resp.dial("+1" + number, callerId='+18622425952')
+	resp.say("I'm sorry, but your call either failed or may have been cut short.", voice='alice', language='en-US')
+
+	with resp.gather(numDigits=1, action='/caller_id_redial/' + number, method='POST') as g:
+		g.say("If you would like to try again, please press 1, otherwise, hang up now.", voice='alice', language='en-US')
+	return str(resp)
+	
+@app.route("/caller_id_redial/<number>", methods=['GET','POST'])
+def caller_id_redial(number):
+	'''redials a number dialed out by caller_id_dial - digits only dialed once'''
+
+	resp = twilio.twiml.Response()
+	resp.say("Connecting you with your destination.", voice='alice')
+	resp.dial("+1" + number, callerId='+18622425952')
+	resp.say("I'm sorry, but your call either failed or may have been cut short.", voice='alice', language='en-US')
+
+	with resp.gather(numDigits=1, action='/caller_id_redial/' + number, method='POST') as g:
+		g.say("If you would like to try again, please press 1, otherwise, hang up now.", voice='alice', language='en-US')
+	return str(resp)
+
 #==============OTHER HELPERS===============
 
 def getSatDate():
@@ -498,24 +707,33 @@ def getOnCallPhoneNum():
 		oncall_current_phone = fallback_phone
 	return oncall_current_phone
 
+def open_db():
+	db = dataset.connect('sqlite:///var/wsgiapps/ehhapp-twilio/ehhapp-twilio.db')
+	return db
+
 #==============BACKGROUND TASKS==============
 @celery.task
-def async_process_message(recording_url, intent, ani)
+def async_process_message(recording_url, intent, ani):
 	process_recording(recording_url, intent, ani)
 	return None
 
-#@celery.task
-#def appointment_reminder(appointment_id):
-#	try:
-#		appointment = db.session.query(Appointment).filter_by(id=appointment.id).one()
-#	except NoResultFound:
-#		return
-#
-#	call = client.calls.create(
-#		to = appointment.phone_number,
-#		from_ = twilio_number,
-#	)
-#	call.sid
+def set_async_message_deliver(record, remind_id):
+	deliver_time = datetime.strptime(record['time'],'%Y-%m-%d %H:%M:%S.%f')
+	send_message.apply_async(args=[remind_id, record['to_phone']], eta=deliver_time)	
+	return None
+
+@celery.task
+def send_message(remind_id, to_phone):
+	execfile(base_dir + "/gdatabase.py")
+	execfile(base_dir + "/email_helper.py")
+	from twilio.rest import TwilioRestClient
+	client = TwilioRestClient(twilio_AccountSID, twilio_AuthToken)
+	call = client.calls.create(url="https://twilio.ehhapp.org/secure_message/callback/" + str(remind_id),
+		to = to_phone,
+		from_ = twilio_number,
+	)
+	return None
+
 #============MUST BE LAST LINE================
 if __name__ == '__main__':
 	app.debug = True
