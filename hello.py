@@ -527,7 +527,7 @@ def secure_message_settime(remind_id):
 	time_set = None
 	if choice == '2':
 		# set the time for tomorrow
-		time_set = datetime.combine(nowtime.date() + timedelta(1), time(10,0,0))
+		time_set = datetime.combine(nowtime.date() + timedelta(1), time(10,0,0,1))
 	else:
 		# set the time as now
 		time_set = nowtime
