@@ -606,7 +606,7 @@ def secure_message_callback(remind_id):
 		return str(resp)
 	
 	with resp.gather(numDigits=1, action='/secure_message/passauth/' + str(remind_id), method='POST') as g:
-		g.say("Hello! You have an important message waiting for you from the e hop Clinic at Mount Sinai.")
+		g.say("Hello! You have an important message waiting for you from the e hop Clinic at Mount Sinai Hospital.")
 		g.say("Press any number to hear your message.")
 	return str(resp)		
 
@@ -646,9 +646,23 @@ def secure_message_playback(remind_id):
 			g.say("Please enter your date of birth, using two digits for the month, day, and year")
 		return str(resp)
 	else:
+		deliver_callback.apply_async(args=[remind_id, record['from_phone']], eta=datetime.now())
 		resp.say("Please wait to hear your secure message from EHHOP.")
 		resp.play(record['message'])
 		return str(resp)
+
+@app.route("/secure_message/delivered/<int:remind_id>", methods=["GET", "POST"])
+def secure_message_delivered(remind_id):
+	resp = twilio.twiml.Response()
+
+	db = open_db()
+	r = db['reminders']
+	# find the record in the DB that corresponds to this call
+	record = r.find_one(id=remind_id)
+	
+	resp.say("Hello! This is a notification from the e hop secure message delivery system. ")
+	resp.say("Your secure message to the number " + ' '.join(record["to_phone"]) + " was delivered sucessfully. Goodbye!")
+	return str(resp)
 
 
 @app.route("/caller_id_dial", methods=['GET','POST'])
@@ -730,6 +744,18 @@ def send_message(remind_id, to_phone):
 	client = TwilioRestClient(twilio_AccountSID, twilio_AuthToken)
 	call = client.calls.create(url="https://twilio.ehhapp.org/secure_message/callback/" + str(remind_id),
 		to = to_phone,
+		from_ = twilio_number,
+	)
+	return None
+
+@celery.task
+def deliver_callback(remind_id, from_phone):
+	execfile(base_dir + "/gdatabase.py")
+	execfile(base_dir + "/email_helper.py")
+	from twilio.rest import TwilioRestClient
+	client = TwilioRestClient(twilio_AccountSID, twilio_AuthToken)
+	call = client.calls.create(url="https://twilio.ehhapp.org/secure_message/delivered/" + str(remind_id),
+		to = from_phone,
 		from_ = twilio_number,
 	)
 	return None
