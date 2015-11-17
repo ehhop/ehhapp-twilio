@@ -649,6 +649,9 @@ def secure_message_playback(remind_id):
 		deliver_callback.apply_async(args=[remind_id, record['from_phone']], eta=datetime.now())
 		resp.say("Please wait to hear your secure message from EHHOP.")
 		resp.play(record['message'])
+		resp.say("Your message will be repeated now.")
+		resp.play(record['message'], loop=5)
+		resp.say("Thank you for coming to the e hop clinic. Goodbye!")
 		return str(resp)
 
 @app.route("/secure_message/delivered/<int:remind_id>", methods=["GET", "POST"])
