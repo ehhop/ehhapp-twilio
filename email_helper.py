@@ -44,6 +44,19 @@ def save_file(recording_url, auth_method):
 	del response
 	return save_name
 
+def save_file_with_name(recording_url, auth_method, save_name):
+	# we are now using HTTP basic auth to do the downloads
+	# step 0 - open up a FTP session with HIPAA box
+	session = ftplib.FTP('ftp.box.com', box_username, box_password)
+	# step 1 - open a request to get the voicemail using a secure channel with Twilio
+	response = requests.get(recording_url, stream=True, auth=auth_method) # no data has been downloaded yet (just headers)
+	# step 2 - read the response object in chunks and write it to the HIPAA box directly
+	session.storbinary('STOR recordings/' + save_name, response.raw)
+	# step 3 - cleanup
+	session.quit()
+	del response
+	return save_name
+
 def delete_file(recording_url):
 	# delete the recording from Twilio - IMPORTANT
 	client = TwilioRestClient(twilio_AccountSID, twilio_AuthToken)

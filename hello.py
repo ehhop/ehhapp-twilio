@@ -18,6 +18,7 @@ wsdlfile='http://phone.ehhapp.org/services.php?wsdl'
 app = Flask(__name__, static_folder='')
 app.config['CELERY_BROKER_URL'] = 'redis://localhost:6379/0'
 app.config['CELERY_RESULT_BACKEND'] = 'redis://localhost:6379/0'
+app.config['CELERY_ENABLE_UTC'] = False
 app.debug = True
 
 celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
@@ -556,19 +557,19 @@ def secure_message_setmessage(remind_id):
 		resp.say("I am sorry, but I could not find a record in the database that matched that ID.")
 		return str(resp)
 
-	# download the file to HIPAA box
-	save_name = save_file(recording_url, auth_combo)
+	# set a new save file name randomly
+	save_name = randomword(128) + ".wav"
 	# set the secure recording URL location
 	new_recording_url = 'https://twilio.ehhapp.org/play_recording?filename=' + save_name
-
 	# set the message url and update the db
 	record['message'] = new_recording_url
-        r.update(record, ['id'])	
+        r.update(record, ['id'])
+
+	# download and save the message (async)
+	save_secure_message.apply_async(args=[recording_url, save_name])
 
 	with resp.gather(numDigits=1, action='/secure_message/send/' + str(remind_id), method='POST') as g:
-		g.say("Thank you. To confirm your secure message, press 1 at any time, otherwise hang up now. ")
-		g.say('Here is your secure message.')
-		g.play(new_recording_url)
+		g.say("To confirm your secure message, press 1. Otherwise, hang up now.")
 	return str(resp)
 
 @app.route("/secure_message/send/<int:remind_id>", methods=['GET', 'POST'])
@@ -646,7 +647,7 @@ def secure_message_playback(remind_id):
 			g.say("Please enter your date of birth, using two digits for the month, day, and year")
 		return str(resp)
 	else:
-		deliver_callback.apply_async(args=[remind_id, record['from_phone']], eta=datetime.now())
+		deliver_callback.apply_async(args=[remind_id, record['from_phone']])
 		resp.say("Please wait to hear your secure message from EHHOP.")
 		resp.play(record['message'])
 		resp.say("Your message will be repeated now.")
@@ -737,6 +738,12 @@ def async_process_message(recording_url, intent, ani):
 def set_async_message_deliver(record, remind_id):
 	deliver_time = datetime.strptime(record['time'],'%Y-%m-%d %H:%M:%S.%f')
 	send_message.apply_async(args=[remind_id, record['to_phone']], eta=deliver_time)	
+	return None
+
+@celery.task
+def save_secure_message(recording_url, save_name):
+	# download the file to HIPAA box
+	save_file_with_name(recording_url, auth_combo, save_name)
 	return None
 
 @celery.task
