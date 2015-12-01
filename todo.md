@@ -15,3 +15,8 @@
 ..* move over to box on MSSM - DONE
 ..* https - need to talk with ASCIT
 6. Port over phone number to Twilio
+
+# kevin silly questions
+
+1. Should we use suds instead of SOAPpy?
+2. Why do we use FTP instead of FTP_TLS for playing voicemails?

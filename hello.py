@@ -102,12 +102,12 @@ def handle_key_hello():
 	elif digit == "3": 
 		'''extension feature'''
 		with resp.gather(numDigits=4, action="/dial_extension", method="POST") as g:
-			g.say("Please dial your four digit extension now.", voice='alice', language="en-US")
+			g.play('https://s3.amazonaws.com/ehhapp-phone/pleasedial4digit.mp3')
 		
 	elif digit == '*':
 		'''auth menu'''
 		with resp.gather(numDigits=8, action='/auth_menu', method="POST") as g:
-			g.say("Please enter your passcode.", voice='alice')
+			g.play('https://s3.amazonaws.com/ehhapp-phone/enterpasscode.mp3')
 	
 	else:
 		'''They have pressed an incorrect key.'''
@@ -123,21 +123,21 @@ def dial_extension():
 	try:
 		return_num = database.lookup_phone_by_extension(int(digits))
 	except:
-		resp.say("I'm sorry, I couldn't find that extension.")
+		resp.play('https://s3.amazonaws.com/ehhapp-phone/couldntfindext.mp3')
 		resp.pause(length=3)
 		with resp.gather(numDigits=4, action="/dial_extension", method="POST") as g:
-			g.say("Please dial your four digit extension now.", voice='alice', language="en-US")
+			g.play('https://s3.amazonaws.com/ehhapp-phone/pleasedial4digit.mp3')
 		return str(resp)
 	if return_num == None:
-		resp.say("I'm sorry, I couldn't find that extension.")
+		resp.play('https://s3.amazonaws.com/ehhapp-phone/couldntfindext.mp3')
 		resp.pause(length=3)
 		with resp.gather(numDigits=4, action="/dial_extension", method="POST") as g:
-			g.say("Please dial your four digit extension now.", voice='alice', language="en-US")
+			g.play('https://s3.amazonaws.com/ehhapp-phone/pleasedial4digit.mp3')
 	else:
 		resp.say("Connecting you with " + return_num[0], voice='alice', language='en-US')
 		resp.pause(length=3)
 		resp.dial(return_num[1], callerId='+18622425952')
-		resp.say("I'm sorry, but your call either failed or may have been cut short. Goodbye!", voice='alice', language='en-US')
+		resp.play('https://s3.amazonaws.com/ehhapp-phone/callfailed-goodbye.mp3')
 	return str(resp)
 
 @app.route("/next_clinic/<person_type>/", methods=["GET", "POST"])
@@ -150,11 +150,11 @@ def find_in_schedule(person_type):
 		if return_names != []:
 			return_num = database.lookup_phone_by_name(return_names[0])
 	except:
-		resp.say("I'm sorry, please try your lookup again later.")
+		resp.play('https://s3.amazonaws.com/ehhapp-phone/systemfailure.mp3')
 		return str(resp)
 		
 	if return_names == []:
-		resp.say("I'm sorry, I couldn't find that person.")
+		resp.play('https://s3.amazonaws.com/ehhapp-phone/couldntfindpersonindb.mp3')
 	else:
 		for name in return_names:
 			return_num = database.lookup_phone_by_name(name)
@@ -162,7 +162,7 @@ def find_in_schedule(person_type):
 				resp.say("Connecting you with " + name, voice='alice', language='en-US')
 				resp.pause(length=3)
 				resp.dial(return_num, callerId='+18622425952')
-		resp.say("I'm sorry, but your call either failed or may have been cut short. Goodbye!", voice='alice', language='en-US')
+		resp.play('https://s3.amazonaws.com/ehhapp-phone/callfailed-goodbye.mp3')
 	return str(resp)
 
 @app.route("/find_person/<person_type>/", methods=["GET", "POST"])
@@ -173,18 +173,18 @@ def find_person(person_type):
         try:
                 return_nums = database.lookup_name_by_position(person_type)      
         except:
-                resp.say("I'm sorry, please try your lookup again later.")
+                resp.play('https://s3.amazonaws.com/ehhapp-phone/systemfailure.mp3')
                 return str(resp)
 
         if return_num == []:
-                resp.say("I'm sorry, I couldn't find that person.")
+                resp.play('https://s3.amazonaws.com/ehhapp-phone/couldntfindpersonindb.mp3')
         else:
                 for return_num in return_nums:
                         if return_num != None:
                                 resp.say("Connecting you with " + return_num[0], voice='alice', language='en-US')
                                 resp.pause(length=3)
                                 resp.dial(return_num[1], callerId='+18622425952')
-                resp.say("I'm sorry, but your call either failed or may have been cut short. Goodbye!", voice='alice', language='en-US')
+                resp.play('https://s3.amazonaws.com/ehhapp-phone/callfailed-goodbye.mp3')
         return str(resp)
 	
 @app.route("/handle_key/clinic_open_menu", methods=["GET", "POST"])
@@ -208,7 +208,7 @@ def clinic_open_menu():
 		# dial current CM
 		resp.dial(oncall_current_phone)
 		# if the call fails
-		resp.say("All clinicians are busy at the moment. Please try again.", voice='alice', language='en-US')
+		resp.play('https://s3.amazonaws.com/ehhapp-phone/allbusy_trylater.mp3')
 		# replay initial menu
 		with resp.gather(numDigits=1, action="/handle_key/clinic_open_menu", method="POST") as g:
 				#If you have an appointment today, please press 1. 
@@ -223,7 +223,7 @@ def clinic_open_menu():
 		return redirect('/take_message/' + digit)
 	# accidential key press
 	else:
-		resp.say("I'm sorry, but you have pressed an incorrect key.", voice='alice', language='en-US')
+		resp.play('https://s3.amazonaws.com/ehhapp-phone/incorrectkey.mp3')
 		resp.pause(length=3)
 		with resp.gather(numDigits=1, action="/handle_key/clinic_open_menu", method="POST") as g:
 			#If you have an appointment today, please press 1. 
@@ -244,7 +244,7 @@ def clinic_closed_menu():
 	if intent in ['2','3','4']:
 		return redirect("/take_message/" + intent)
 	else:
-		resp.say("I'm sorry, but you have pressed an incorrect key.", voice='alice', language='en-US')
+		resp.play('https://s3.amazonaws.com/ehhapp-phone/incorrectkey.mp3')
 		resp.pause(length=3)
 		with resp.gather(numDigits=1, action="/handle_key/clinic_closed_menu", method="POST") as g: 
 			#If you have not been to EHHOP before, please press 2.
@@ -423,12 +423,12 @@ def auth_menu():
 	if passcode == '12345678':
 		#success
 		with resp.gather(numDigits=1, action='/auth_selection', method='POST') as g:
-			g.say("To dial a patient using the EHHOP number, please press 1. To leave a secure message for a patient, please press 2.", voice='alice')
+			g.play('https://s3.amazonaws.com/ehhapp-phone/dial-vmremindermenu.mp3')
 		return str(resp)
 	else:
-		resp.say("I'm sorry, that passcode is incorrect.", voice='alice')
+		resp.play('https://s3.amazonaws.com/ehhapp-phone/incorrectkey.mp3')
 		with resp.gather(numDigits=8, action='/auth_menu', method='POST') as g:
-			g.say("Please enter your passcode.", voice='alice')
+			g.play('https://s3.amazonaws.com/ehhapp-phone/enterpasscode.mp3')
 		return str(resp)
 
 @app.route("/auth_selection", methods=['GET','POST'])
@@ -438,16 +438,16 @@ def auth_selection():
 
 	if digit == '1':
 		with resp.gather(numDigits=10, action='/caller_id_dial', method='POST') as g:
-			g.say("Please enter the ten-digit phone number you wish to call, starting with the area code", voice='alice')
+			g.play('https://s3.amazonaws.com/ehhapp-phone/entertodigits.mp3')
 		return str(resp)
 	elif digit == '2':
 		with resp.gather(numDigits=10, action='/secure_message/setnum/', method='POST') as g:
-			g.say("Please enter the ten-digit phone number you wish to send a message to, starting with the area code", voice='alice')
+			g.play('https://s3.amazonaws.com/ehhapp-phone/entertendigits-vm.mp3')
 		return str(resp)
 	else:
-		resp.say("I didn't catch that.")
+		resp.play('https://s3.amazonaws.com/ehhapp-phone/incorrectkey.mp3')
 		with resp.gather(numDigits=1, action='/auth_selection', method='POST') as g:
-			g.say("To dial a patient using the EHHOP number, please press 1. To leave a secure message for a patient, please press 2.", voice='alice')
+			g.play('https://s3.amazonaws.com/ehhapp-phone/dial-vmremindermenu.mp3')
                 return str(resp)
 
 @app.route("/secure_message/setnum/", methods=['GET', 'POST'])
@@ -478,8 +478,9 @@ def secure_message_setnum():
 			spanish=None))
 	
 	with resp.gather(numDigits=6, action='/secure_message/setpass/' + str(remind_id), method='POST') as g:
-		g.say("You dialed " + ' '.join(number) + '. ', voice='alice')
-		g.say("Please enter the patient's date of birth, using two digits for the month, day, and year.")
+		g.play('https://s3.amazonaws.com/ehhapp-phone/youdialed.mp3')
+		g.say(' '.join(number) + '. ', voice='alice')
+		g.play('https://s3.amazonaws.com/ehhapp-phone/setpass.mp3')
 	return str(resp)
 
 @app.route("/secure_message/setpass/<int:remind_id>", methods=['GET', 'POST'])
@@ -495,7 +496,7 @@ def secure_message_setpass(remind_id):
 		# find the record in the DB that corresponds to this call
 		record = r.find_one(id=remind_id)
 	except:
-		resp.say("I am sorry, but I could not find a record in the database that matched that ID.")
+		resp.play('https://s3.amazonaws.com/ehhapp-phone/vmsystemfail.mp3')
 		return str(resp)
 
 	# set a passcode and update the DB
@@ -504,8 +505,9 @@ def secure_message_setpass(remind_id):
 
 	# ask for a reminder time
 	with resp.gather(numDigits=1, action='/secure_message/settime/' + str(remind_id), method='POST') as g:
-		g.say("You dialed " + ' '.join(passcode) + ".", voice="alice")
-		g.say("To send your message now, please press 1. To send your message tomorrow morning at 10 AM, please press 2.")
+		g.play('https://s3.amazonaws.com/ehhapp-phone/youdialed.mp3')
+		g.say(' '.join(passcode) + ".", voice="alice")
+		g.play('https://s3.amazonaws.com/ehhapp-phone/settime.mp3')
 	return str(resp)
 
 @app.route("/secure_message/settime/<int:remind_id>", methods=['GET', 'POST'])
@@ -520,7 +522,7 @@ def secure_message_settime(remind_id):
 		# find the record in the DB that corresponds to this call
 		record = r.find_one(id=remind_id)
 	except:
-		resp.say("I am sorry, but I could not find a record in the database that matched that ID.")
+		resp.play('https://s3.amazonaws.com/ehhapp-phone/vmsystemfail.mp3')
 		return str(resp)
 	
 	# set the reminder time delta
@@ -538,7 +540,7 @@ def secure_message_settime(remind_id):
         r.update(record, ['id'])
 	
 	# now we need to record the message
-	resp.say("Please leave your secure message after the tone, and press any number and hold as we process your message.")
+	resp.play('https://s3.amazonaws.com/ehhapp-phone/leavesecuremessage.mp3')
 	resp.record(maxLength=300, action="/secure_message/setmessage/" + str(remind_id), method='POST')
 
 	return str(resp)
@@ -554,7 +556,7 @@ def secure_message_setmessage(remind_id):
 		# find the record in the DB that corresponds to this call
 		record = r.find_one(id=remind_id)
 	except:
-		resp.say("I am sorry, but I could not find a record in the database that matched that ID.")
+		resp.play('https://s3.amazonaws.com/ehhapp-phone/vmsystemfail.mp3')
 		return str(resp)
 
 	# set a new save file name randomly
@@ -569,7 +571,7 @@ def secure_message_setmessage(remind_id):
 	save_secure_message.apply_async(args=[recording_url, save_name])
 
 	with resp.gather(numDigits=1, action='/secure_message/send/' + str(remind_id), method='POST') as g:
-		g.say("To confirm your secure message, press 1. Otherwise, hang up now.")
+		g.play('https://s3.amazonaws.com/ehhapp-phone/confirmsecuremessage.mp3')
 	return str(resp)
 
 @app.route("/secure_message/send/<int:remind_id>", methods=['GET', 'POST'])
@@ -583,13 +585,13 @@ def secure_message_send(remind_id):
 		# find the record in the DB that corresponds to this call
 		record = r.find_one(id=remind_id)
 	except:
-		resp.say("I am sorry, but I could not find a record in the database that matched that ID.")
+		resp.play('https://s3.amazonaws.com/ehhapp-phone/vmsystemfail.mp3')
 		return str(resp)
 	
 	# we should have everything now, so make a record in celery for a call out
 	set_async_message_deliver(record, remind_id)
 	
-	resp.say("Thank you. Your secure message has been sent and will be delivered soon. Goodbye!")
+	resp.play('https://s3.amazonaws.com/ehhapp-phone/securemessagesent.mp3')
 	return str(resp)
 
 @app.route("/secure_message/callback/<int:remind_id>", methods=['GET', 'POST'])
@@ -602,13 +604,13 @@ def secure_message_callback(remind_id):
 		# find the record in the DB that corresponds to this call
 		record = r.find_one(id=remind_id)
 	except:
-		resp.say("Hello! You have an important message waiting for you from the EHHOP Clinic at Mount Sinai.")
-		resp.say("Please call EHHOP at 862-242-5952 to hear your message.")
+		resp.play('https://s3.amazonaws.com/ehhapp-phone/hello_importantmessage.mp3')
+		resp.play('https://s3.amazonaws.com/ehhapp-phone/messageretrievalfail.mp3')
 		return str(resp)
 	
 	with resp.gather(numDigits=1, action='/secure_message/passauth/' + str(remind_id), method='POST') as g:
-		g.say("Hello! You have an important message waiting for you from the e hop Clinic at Mount Sinai Hospital.")
-		g.say("Press any number to hear your message.")
+		g.play('https://s3.amazonaws.com/ehhapp-phone/hello_importantmessage.mp3')
+		g.play('https://s3.amazonaws.com/ehhapp-phone/pressanynumtohearmessage.mp3')
 	return str(resp)		
 
 @app.route("/secure_message/passauth/<int:remind_id>", methods=['GET', 'POST'])
@@ -622,13 +624,11 @@ def secure_message_passauth(remind_id):
 		# find the record in the DB that corresponds to this call
 		record = r.find_one(id=remind_id)
 	except:
-		resp.say("We're sorry, but your message cannot be retrieved at this time.")
-		resp.say("Please call EHHOP at 862-242-5952 to hear your message.")
+		resp.play('https://s3.amazonaws.com/ehhapp-phone/messageretrievalfail.mp3')
 		return str(resp)
 
 	with resp.gather(numDigits=6, action='/secure_message/playback/' + str(remind_id), method='POST') as g:
-		g.say("Please enter your date of birth, using two digits for the month, day, and year")
-		g.say("For instance, if your birthday is January 5th, 1980, then you would type 0 1, 0 5, 8 0.")
+		g.play('https://s3.amazonaws.com/ehhapp-phone/pleaseenterpasscoderetrieve.mp3')
 	return str(resp)
 
 @app.route("/secure_message/playback/<int:remind_id>", methods=['GET', 'POST'])
@@ -643,16 +643,15 @@ def secure_message_playback(remind_id):
 	
 	if record['passcode'] != passcode:
 		with resp.gather(numDigits=6, action='/secure_message/playback/' + str(remind_id), method='POST') as g:
-			g.say("We're sorry, but your passcode is incorrect.")
-			g.say("Please enter your date of birth, using two digits for the month, day, and year")
+			g.play('https://s3.amazonaws.com/ehhapp-phone/passcodeincorrect.mp3')
 		return str(resp)
 	else:
 		deliver_callback.apply_async(args=[remind_id, record['from_phone']])
-		resp.say("Please wait to hear your secure message from EHHOP.")
+		resp.play('https://s3.amazonaws.com/ehhapp-phone/pleasewaittohearmessage.mp3')
 		resp.play(record['message'])
-		resp.say("Your message will be repeated now.")
+		resp.play('https://s3.amazonaws.com/ehhapp-phone/messagewillrepeat.mp3')
 		resp.play(record['message'], loop=5)
-		resp.say("Thank you for coming to the e hop clinic. Goodbye!")
+		resp.play('https://s3.amazonaws.com/ehhapp-phone/goodbye.mp3')
 		return str(resp)
 
 @app.route("/secure_message/delivered/<int:remind_id>", methods=["GET", "POST"])
@@ -664,8 +663,9 @@ def secure_message_delivered(remind_id):
 	# find the record in the DB that corresponds to this call
 	record = r.find_one(id=remind_id)
 	
-	resp.say("Hello! This is a notification from the e hop secure message delivery system. ")
-	resp.say("Your secure message to the number " + ' '.join(record["to_phone"]) + " was delivered sucessfully. Goodbye!")
+	resp.play('https://s3.amazonaws.com/ehhapp-phone/deliverpart1.mp3')
+	resp.say(' '.join(record["to_phone"]))
+	resp.play('https://s3.amazonaws.com/ehhapp-phone/deliverpart2.mp3')
 	return str(resp)
 
 
@@ -681,7 +681,7 @@ def caller_id_dial():
 	resp.say("I'm sorry, but your call either failed or may have been cut short.", voice='alice', language='en-US')
 
 	with resp.gather(numDigits=1, action='/caller_id_redial/' + number, method='POST') as g:
-		g.say("If you would like to try again, please press 1, otherwise, hang up now.", voice='alice', language='en-US')
+		g.play('https://s3.amazonaws.com/ehhapp-phone/tryagainpress1.mp3')
 	return str(resp)
 	
 @app.route("/caller_id_redial/<number>", methods=['GET','POST'])
@@ -694,7 +694,7 @@ def caller_id_redial(number):
 	resp.say("I'm sorry, but your call either failed or may have been cut short.", voice='alice', language='en-US')
 
 	with resp.gather(numDigits=1, action='/caller_id_redial/' + number, method='POST') as g:
-		g.say("If you would like to try again, please press 1, otherwise, hang up now.", voice='alice', language='en-US')
+		g.play('https://s3.amazonaws.com/ehhapp-phone/tryagainpress1.mp3')
 	return str(resp)
 
 #==============OTHER HELPERS===============
