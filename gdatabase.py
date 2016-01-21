@@ -1,4 +1,4 @@
-import json, re
+import json, re, os
 import gspread
 from oauth2client.client import SignedJwtAssertionCredentials
 execfile(os.path.dirname(os.path.realpath(__file__)) + "/params.conf")
@@ -39,7 +39,7 @@ class EHHOPdb:
 		# ext should already be an int
 		for record in self.personnel:
 			if ext == record['Extension']:
-				return [record['Name'], '+1' + self.sanitize.sub('', record['Telephone'])] # if we found the extension
+				return [record['Name'], '+1' + self.sanitize.sub('', record['Telephone']), record['Email']] # if we found the extension
 
 	def lookup_phone_by_name(self, name):
 		#get matching extension (O(N) time lookup...)
@@ -54,14 +54,14 @@ class EHHOPdb:
 		# get matching line in schedule (O(N) time lookup...)
 		for record in self.schedule:
 			if record['Date'] == lookup_date:
-				return [record[i] for i in keys if record[i] != '']
+				return [a for i in keys if record[i] != '' for a in record[i].split("\n")]
 		return [] # return empty list
 	
 	def lookup_name_by_position(self, person_type):
 		# get matching person
 		people = []
 		for record in self.personnel:
-			if person_type in record['Position']:
-				people.append([record['Name'], '+1' + self.sanitize.sub('', record['Telephone'])])
+			if person_type.lower() in record['Position'].lower():
+				people.append([record['Name'], '+1' + self.sanitize.sub('', record['Telephone']), record['Email']])
 		return people # return empty list
 

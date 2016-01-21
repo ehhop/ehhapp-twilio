@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from email.mime.text import MIMEText
 from requests.auth import HTTPBasicAuth
 from twilio.rest import TwilioRestClient
+from gdatabase import *
 
 execfile("/var/wsgiapps/ehhapp-twilio/params.conf")
 base_dir = "/var/wsgiapps/ehhapp-twilio"
@@ -10,23 +11,34 @@ base_dir = "/var/wsgiapps/ehhapp-twilio"
 # user/pass to log into Twilio to retrieve files
 auth_combo=HTTPBasicAuth(twilio_AccountSID, twilio_AuthToken)
 
-def process_recording(recording_url, intent, ani, auth_method=auth_combo):
+def process_recording(recording_url, intent, ani, positions='Twilio', to_emails=None, auth_method=auth_combo):
 	satdate = getSatDate()
+	if to_emails == None:
+		#positions should now be a string separated by commas
+		positions = positions.split(',')
+		to_emails = []
+		database = EHHOPdb(credentials)
+		for i in positions:
+			searchresult = database.lookup_name_by_position(i)
+			if searchresult != []:
+				to_emails.extend([i[2] for i in searchresult])
+	else:
+		to_emails = to_emails.split(',')
 	recording_name = save_file(recording_url, auth_method)
-	send_email(recording_name, intent, ani)
+	send_email(recording_name, intent, ani, to_emails)
 	delete_file(recording_url)
 	return None
 
-def send_email(recording_name, intent, ani):
+def send_email(recording_name, intent, ani, to_emails=it_emails):
 	intent = str(intent)
 	# look for configuration variables in params.conf file...
 	msg = MIMEText(email_template % (player_url + recordings_base + recording_name, from_email))
-	msg['Subject'] = 'EHHOP voicemail from ' + intentions[intent] + ", number " + ani
+	msg['Subject'] = 'TESTING - PLEASE IGNORE - EHHOP voicemail from ' + intentions[intent][0] + ", number " + ani
 	msg['From']  = from_email
-	msg['To'] = ','.join(it_emails)
+	msg['To'] = ','.join(to_emails)
 
 	s = smtplib.SMTP('localhost')
-	s.sendmail(from_email, it_emails, msg.as_string())
+	s.sendmail(from_email, to_emails, msg.as_string())
 	s.quit()
 	return None
 

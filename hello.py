@@ -2,7 +2,7 @@ import dataset
 import sys, os, pytz, re, ftplib
 from datetime import datetime, timedelta, date, time
 from SOAPpy import WSDL
-from flask import Flask, request, redirect, send_from_directory, Response, stream_with_context
+from flask import Flask, request, redirect, send_from_directory, Response, stream_with_context, url_for
 import twilio.twiml
 from celery import Celery
 
@@ -16,8 +16,8 @@ client = TwilioRestClient(twilio_AccountSID, twilio_AuthToken)
 wsdlfile='http://phone.ehhapp.org/services.php?wsdl'
 
 app = Flask(__name__, static_folder='')
-app.config['CELERY_BROKER_URL'] = 'redis://localhost:6379/0'
-app.config['CELERY_RESULT_BACKEND'] = 'redis://localhost:6379/0'
+app.config['CELERY_BROKER_URL'] = 'redis://:' + redis_pass + '@localhost:6379/0'
+app.config['CELERY_RESULT_BACKEND'] = 'redis://:' + redis_pass + '@localhost:6379/0'
 app.config['CELERY_ENABLE_UTC'] = False
 app.debug = True
 
@@ -37,13 +37,23 @@ def hello_ehhop():
 	#If this is an emergency please 
 	#hang up and dial 9 1 1 now.
 	#For instructions in English, please press 1.
-	#If you know your party's extension, please press #.
+	#If you know your party's extension, please press 3.
 	#EHHOP es la Asociacion Comunitaria para la Salud de 
 	#East Harlem en Mount Sinai. Si esto es una emergencia, 
 	#cuelgue el telefono y llame ahora al 9-1-1. We are the 
 	#East Harlem Health Outreach Partnership of the Icahn School 
 	#of Medicine at Mount Sinai. 
 
+	# check if patient has a secure message waiting - if so redirect
+	callerid = request.values.get('From', None)
+	if callerid != None:
+		callerid = callerid[-10:]
+		db = open_db()	
+		r = db['reminders']
+		record = r.find_one(to_phone=callerid, delivered=False, order_by=['-id'])
+		if record != None:
+			return redirect(url_for('secure_message_callback', remind_id = record['id']))
+	
 	resp = twilio.twiml.Response()
 	with resp.gather(numDigits=1, action="/handle_key/hello", method="POST") as g:
 		for i in range(0,3):
@@ -67,8 +77,11 @@ def handle_key_hello():
 				#If you have an appointment today, please press 1. 
 				#If you have not been to EHHOP before, please press 2.
 				#If you are an EHHOP patient and have an urgent medical concern, please press 3.
-				#If you are an EHHOP patient and have a question about medications, appointments, 
-				#or other matters, please press 4.
+				#If you are an EHHOP patient and have a question about an upcoming appointment or medications, please press 4.
+				#If you are an EHHOP patient and would like to schedule an appointment with a specialist, opthamology, or dental, please press 5.
+				#If you are an EHHOP patient and have a question about a bill you received, please press 6.
+				#For all other non-urgent concerns, please press 7.
+				#To hear this menu again, stay on the line.
 				for i in range(0,3):
 					g.play("https://s3.amazonaws.com/ehhapp-phone/clinic_open_menu.mp3")
 					g.pause(length=5)
@@ -77,8 +90,11 @@ def handle_key_hello():
 				
 				#If you have not been to EHHOP before, please press 2.
 				#If you are an EHHOP patient and have an urgent medical concern, please press 3.
-				#If you are an EHHOP patient and have a question about medications, appointments, 
-				#or other matters, please press 4.
+				#If you are an EHHOP patient and have a question about an upcoming appointment or medications, please press 4.
+				#If you are an EHHOP patient and would like to schedule an appointment with a specialist, opthamology, or dental, please press 5.
+				#If you are an EHHOP patient and have a question about a bill you received, please press 6.
+				#For all other non-urgent concerns, please press 7.
+				#To hear this menu again, stay on the line.
 				for i in range(0,3):
 					g.play("https://s3.amazonaws.com/ehhapp-phone/clinic_closed_menu.mp3")
 					g.pause(length=5)
@@ -134,10 +150,9 @@ def dial_extension():
 		with resp.gather(numDigits=4, action="/dial_extension", method="POST") as g:
 			g.play('https://s3.amazonaws.com/ehhapp-phone/pleasedial4digit.mp3')
 	else:
-		resp.say("Connecting you with " + return_num[0], voice='alice', language='en-US')
-		resp.pause(length=3)
-		resp.dial(return_num[1], callerId='+18622425952')
-		resp.play('https://s3.amazonaws.com/ehhapp-phone/callfailed-goodbye.mp3')
+		resp.say("Sending you to the mailbox of " + return_num[0], voice='alice', language='en-US')
+		resp.pause(length=1)
+		resp.redirect('/take_message/0?to_email=' + return_num[2])
 	return str(resp)
 
 @app.route("/next_clinic/<person_type>/", methods=["GET", "POST"])
@@ -219,7 +234,7 @@ def clinic_open_menu():
 				g.play("https://s3.amazonaws.com/ehhapp-phone/clinic_open_menu.mp3")
 				g.pause(length=5)
 	# not been here before
-	elif digit in ['2', '3', '4']:
+	elif digit in ['2', '3', '4','5','6','7']:
 		return redirect('/take_message/' + digit)
 	# accidential key press
 	else:
@@ -229,8 +244,11 @@ def clinic_open_menu():
 			#If you have an appointment today, please press 1. 
 			#If you have not been to EHHOP before, please press 2.
 			#If you are an EHHOP patient and have an urgent medical concern, please press 3.
-			#If you are an EHHOP patient and have a question about medications, appointments, 
-			#or other matters, please press 4.
+			#If you are an EHHOP patient and have a question about an upcoming appointment or medications, please press 4.
+			#If you are an EHHOP patient and would like to schedule an appointment with a specialist, opthamology, or dental, please press 5.
+			#If you are an EHHOP patient and have a question about a bill you received, please press 6.
+			#For all other non-urgent concerns, please press 7.
+			#To hear this menu again, stay on the line.
 			g.play("https://s3.amazonaws.com/ehhapp-phone/clinic_open_menu.mp3")
 			g.pause(length=5)
 	return str(resp)
@@ -241,7 +259,7 @@ def clinic_closed_menu():
 	resp = twilio.twiml.Response()
 	intent = request.values.get('Digits', None)
 	
-	if intent in ['2','3','4']:
+	if intent in ['2','3','4','5','6','7']:
 		return redirect("/take_message/" + intent)
 	else:
 		resp.play('https://s3.amazonaws.com/ehhapp-phone/incorrectkey.mp3')
@@ -249,30 +267,38 @@ def clinic_closed_menu():
 		with resp.gather(numDigits=1, action="/handle_key/clinic_closed_menu", method="POST") as g: 
 			#If you have not been to EHHOP before, please press 2.
 			#If you are an EHHOP patient and have an urgent medical concern, please press 3.
-			#If you are an EHHOP patient and have a question about medications, appointments, 
-			#or other matters, please press 4.
+			#If you are an EHHOP patient and have a question about an upcoming appointment or medications, please press 4.
+			#If you are an EHHOP patient and would like to schedule an appointment with a specialist, opthamology, or dental, please press 5.
+			#If you are an EHHOP patient and have a question about a bill you received, please press 6.
+			#For all other non-urgent concerns, please press 7.
+			#To hear this menu again, stay on the line.
 			g.play("https://s3.amazonaws.com/ehhapp-phone/clinic_closed_menu.mp3")
 			g.pause(length=5)
 	return str(resp)
 	
-@app.route("/take_message/<intent>", methods=['GET', 'POST'])
+@app.route("/take_message/<int:intent>", methods=['GET', 'POST'])
 def take_message(intent):
 	'''takes a voice message and passes it to the voicemail server'''
 	
 	resp = twilio.twiml.Response()
+	if intent == 0:
+		to_email = request.values.get('to_email', None)
+		after_record = '/handle_recording/' + str(intent) + '?to_email=' + to_email
+	else:
+		after_record = '/handle_recording/' + str(intent)
 	
 	if intent == '3':
-		#Please leave a message for us after the tone. We will call you back as soon as possible.
+		#Please leave a message for us after the tone. Make sure to let us know what times we can call you back. We will call you back as soon as possible.
 		resp.play("https://s3.amazonaws.com/ehhapp-phone/urgent_message.mp3")
-	if intent in ['2','4']:
-		#Please leave a message for us after the tone. We will call you back within one day.
+	else:
+		#Please leave a message for us after the tone. Make sure to let us know what times we can call you back. We will call you back within one day.
 		resp.play("https://s3.amazonaws.com/ehhapp-phone/nonurgent_message.mp3")
 
 	resp.play("https://s3.amazonaws.com/ehhapp-phone/vm_instructions.mp3")
 
 	# after patient leaves message, direct them to next step
-	after_record = '/handle_recording/' + intent
-	resp.record(maxLength=300, action=after_record, method="POST")	
+	
+	resp.record(maxLength=300, action=after_record, method="POST")
 
 	return str(resp)
 
@@ -281,10 +307,16 @@ def handle_recording(intent):
 	'''patient has finished leaving recording'''
 	resp = twilio.twiml.Response()
 	ani = request.values.get('From', 'None')
+	to_email = None
+	positions = None
+	if intent == 0:
+		to_email = request.values.get('to_email', None)
+	else:
+		positions = ','.join(intentions[intent][1])
 	recording_url = request.values.get("RecordingUrl", None)
 
 	# process message asynchronously (e.g. download and send emails) using Celery
-	async_process_message.delay(recording_url, intent, ani)
+	async_process_message.delay(recording_url, intent, ani, positions, to_emails=to_email)
 
 	###if the message was successfully sent... TODO to check
 	# Your message was sent. Thank you for contacting EHHOP. Goodbye!
@@ -423,6 +455,9 @@ def auth_menu():
 	if passcode == '12345678':
 		#success
 		with resp.gather(numDigits=1, action='/auth_selection', method='POST') as g:
+			#To call Pacific Interpreters, please press 1.
+			#To dial a patient using the ehhop number, please press 2.
+			#To leave a secure message for a patient, please press 3. 			
 			g.play('https://s3.amazonaws.com/ehhapp-phone/dial-vmremindermenu.mp3')
 		return str(resp)
 	else:
@@ -435,12 +470,15 @@ def auth_menu():
 def auth_selection():
 	resp = twilio.twiml.Response()
 	digit = request.values.get("Digits", None)
-
+	
 	if digit == '1':
+		resp.dial('+18002641552', callerId='+18622425952')
+		return str(resp)
+	elif digit == '2':
 		with resp.gather(numDigits=10, action='/caller_id_dial', method='POST') as g:
 			g.play('https://s3.amazonaws.com/ehhapp-phone/entertodigits.mp3')
 		return str(resp)
-	elif digit == '2':
+	elif digit == '3':
 		with resp.gather(numDigits=10, action='/secure_message/setnum/', method='POST') as g:
 			g.play('https://s3.amazonaws.com/ehhapp-phone/entertendigits-vm.mp3')
 		return str(resp)
@@ -471,6 +509,7 @@ def secure_message_setnum():
 	remind_id = r.insert(dict(to_phone=number, 
 			from_phone=from_phone,
 			time=None,
+			delivered=False,
 			freq=24,
 			message=None,
 			name=None,
@@ -646,6 +685,8 @@ def secure_message_playback(remind_id):
 			g.play('https://s3.amazonaws.com/ehhapp-phone/passcodeincorrect.mp3')
 		return str(resp)
 	else:
+		record['delivered'] = True
+		r.update(record, ['id'])
 		deliver_callback.apply_async(args=[remind_id, record['from_phone']])
 		resp.play('https://s3.amazonaws.com/ehhapp-phone/pleasewaittohearmessage.mp3')
 		resp.play(record['message'])
@@ -708,7 +749,7 @@ def getSatDate():
                 addtime=timedelta(6)
         else:
                 addtime=timedelta(5-day_of_week)
-        satdate = (time_now+addtime).strftime('%m/%d/%Y')
+        satdate = (time_now+addtime).strftime('%-m/%-d/%Y')
         return satdate
 
 def getOnCallPhoneNum():
@@ -730,9 +771,10 @@ def open_db():
 	return db
 
 #==============BACKGROUND TASKS==============
-@celery.task
-def async_process_message(recording_url, intent, ani):
-	process_recording(recording_url, intent, ani)
+
+@celery.task(name='tasks.async_process_message')
+def async_process_message(recording_url, intent, ani, positions, to_emails=None):
+	process_recording(recording_url, intent, ani, positions, to_emails=to_emails)
 	return None
 
 def set_async_message_deliver(record, remind_id):
