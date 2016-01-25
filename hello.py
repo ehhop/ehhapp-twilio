@@ -1,26 +1,44 @@
-import dataset
 import sys, os, pytz, re, ftplib
 from datetime import datetime, timedelta, date, time
-from SOAPpy import WSDL
-from flask import Flask, request, redirect, send_from_directory, Response, stream_with_context, url_for
-import twilio.twiml
+#temporary DB for outgoing messages
+import dataset
+#flask stuff
+from flask import Flask, request, redirect, send_from_directory, Response, stream_with_context, url_for, render_template
+import flask.ext.login as flask_login
+from flask_sqlalchemy import SQLAlchemy
+#delayed messages
 from celery import Celery
+#Google Sign Ins
+from oauth2client import client as gauthclient
+from oauth2client import crypt
 
+#other helpers
 base_dir = os.path.dirname(os.path.realpath(__file__))
 execfile(base_dir + "/gdatabase.py")
 execfile(base_dir + "/email_helper.py")
 
+#Twilio
+import twilio.twiml
 from twilio.rest import TwilioRestClient
 client = TwilioRestClient(twilio_AccountSID, twilio_AuthToken)
 
-wsdlfile='http://phone.ehhapp.org/services.php?wsdl'
-
+#Flask init
 app = Flask(__name__, static_folder='')
 app.config['CELERY_BROKER_URL'] = 'redis://:' + redis_pass + '@localhost:6379/0'
 app.config['CELERY_RESULT_BACKEND'] = 'redis://:' + redis_pass + '@localhost:6379/0'
 app.config['CELERY_ENABLE_UTC'] = False
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////var/wsgiapps/ehhapp-twilio/ehhapp-twilio-2.db'
+app.secret_key = flask_secret_key
 app.debug = True
 
+#SQLAlchemy
+db2 = SQLAlchemy(app)
+
+#logins
+login_manager = flask_login.LoginManager()
+login_manager.init_app(app)
+
+#delayed messages init
 celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
 celery.conf.update(app.config)
 
@@ -421,9 +439,90 @@ def sp_handle_recording(intent):
 	return str(resp)
 
 #==============SERVE VOICEMAILS============
+class User(db2.Model):
+    """An admin user capable of viewing reports.
 
+    :param str email: email address of user
+    :param str google_token: callback token
+
+    """
+    __tablename__ = 'user'
+
+    email = db2.Column(db2.String, primary_key=True)
+    google_token = db2.Column(db2.String)
+    authenticated = db2.Column(db2.Boolean, default=False)
+
+    def is_active(self):
+        """True, as all users are active."""
+        return True
+
+    def get_id(self):
+        """Return the email address to satisfy Flask-Login's requirements."""
+        return self.email
+
+    def is_authenticated(self):
+        """Return True if the user is authenticated."""
+        return self.authenticated
+
+    def is_anonymous(self):
+        """False, as anonymous users aren't supported."""
+        return False
+    
+@login_manager.user_loader
+def user_loader(user_id):
+	return User.query.get(user_id)
+
+@login_manager.unauthorized_handler
+def unauthorized():
+	return 'Not Authorized'
+
+@app.route('/tokensignin', methods=['POST'])
+def googleOAuthTokenVerify():
+	#from https://developers.google.com/identity/sign-in/web/backend-auth
+	token = request.values.get('idtoken', None)
+	try:
+		idinfo = gauthclient.verify_id_token(token, vm_client_id)
+		# If multiple clients access the backend server:
+		if idinfo['aud'] not in [vm_client_id]:
+			raise crypt.AppIdentityError("Unrecognized client.")
+		if idinfo['iss'] not in ['accounts.google.com', 'https://accounts.google.com']:
+			raise crypt.AppIdentityError("Wrong issuer.")
+	except crypt.AppIdentityError:
+		# Invalid token
+		return None
+
+	#okay, now we're logged in. yay!
+	userid = idinfo['sub']
+	useremail = idinfo['email']
+	user = User.query.get(useremail)
+	if user:
+		user.authenticated=True
+		db2.session.add(user)
+		db2.session.commit()
+		flask_login.login_user(user, remember=True)
+	else:
+		if '@icahn.mssm.edu' not in useremail:
+			return 'Unauthorized e-mail address. You must be a ISMMS student with an @icahn.mssm.edu address!'
+		else:
+			user = User(email = useremail, google_token=userid)
+			user.authenticated=True
+			db2.session.add(user)
+			db2.session.commit()
+			flask_login.login_user(user, remember=True)
+	return useremail
+	
+
+@app.route('/flashplayer', methods=['GET'])
+def serve_vm_player():
+	audio_url = request.values.get('a', None)
+	return render_template("player_twilio.html",
+							audio_url = audio_url)
+
+@flask_login.login_required
 @app.route('/play_recording', methods=['GET', 'POST'])
 def play_vm_recording():
+	if not flask_login.current_user.is_authenticated:
+		return app.login_manager.unauthorized()
 	''' plays a voicemail recording from the Box server'''
 	filename = request.values.get('filename', None)
 	# check that filename attribute was set, else return None
@@ -751,20 +850,6 @@ def getSatDate():
                 addtime=timedelta(5-day_of_week)
         satdate = (time_now+addtime).strftime('%-m/%-d/%Y')
         return satdate
-
-def getOnCallPhoneNum():
-	# get next saturday's date
-	satdate = getSatDate()
-
-	# get the phone # of the on call - fallback if something wrong
-	try:
-	        server = WSDL.Proxy(wsdlfile)
-        	oncall_phone_unsan = server.get_oncall_CM_phone(nearest_saturday=satdate).strip('-')
-	        d = re.compile(r'[^\d]+')
-        	oncall_current_phone = '+1' + d.sub('', oncall_phone_unsan)
-	except:
-		oncall_current_phone = fallback_phone
-	return oncall_current_phone
 
 def open_db():
 	db = dataset.connect('sqlite:///var/wsgiapps/ehhapp-twilio/ehhapp-twilio.db')
