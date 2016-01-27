@@ -1,4 +1,5 @@
-import sys, os, pytz, re, ftplib
+import sys, os, pytz, re
+from ftplib import FTP_TLS
 from datetime import datetime, timedelta, date, time
 #temporary DB for outgoing messages
 import dataset
@@ -508,15 +509,26 @@ def googleOAuthTokenVerify():
 			user.authenticated=True
 			db2.session.add(user)
 			db2.session.commit()
-			flask_login.login_user(user, remember=True)
+			flask_login.login_user(user, remember=False)
 	return useremail
+
+@app.route("/logout", methods=["GET", "POST"])
+@flask_login.login_required
+def logout():
+    """Logout the current user."""
+    user = flask_login.current_user
+    user.authenticated = False
+    db2.session.add(user)
+    db2.session.commit()
+    flask_login.logout_user()
+    return "Logged out."
 	
 
 @app.route('/flashplayer', methods=['GET'])
 def serve_vm_player():
 	audio_url = request.values.get('a', None)
 	return render_template("player_twilio.html",
-							audio_url = audio_url)
+				audio_url = audio_url)
 
 @flask_login.login_required
 @app.route('/play_recording', methods=['GET', 'POST'])
@@ -536,7 +548,7 @@ def play_vm_recording():
 	def get_file(filename):
 		# get file
 		chunks = []
-		session = ftplib.FTP('ftp.box.com', box_username, box_password)
+		session = FTP_TLS('ftp.box.com', box_username, box_password)
 		session.retrbinary('RETR recordings/' + filename, chunks.append)
 		session.close()
 		for chunk in chunks:

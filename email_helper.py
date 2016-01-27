@@ -43,7 +43,7 @@ def send_email(recording_name, intent, ani, to_emails=it_emails):
 	return None
 
 def save_file(recording_url, auth_method):
-	save_name = randomword(128) + ".wav" # hopefully no collisions
+	save_name = recording_url.split('/')[-1].split('.')[0] + "_" + randomword(16) + "." + recording_url.split(".")[-1] # take regular name and salt it
 	# we are now using HTTP basic auth to do the downloads
 	# step 0 - open up a FTP session with HIPAA box
 	session = ftplib.FTP('ftp.box.com', box_username, box_password)
