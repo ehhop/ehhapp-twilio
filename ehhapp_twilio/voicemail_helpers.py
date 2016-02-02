@@ -102,7 +102,8 @@ def logout():
 def serve_vm_player():
 	audio_url = request.values.get('a', None)
 	return render_template("player_twilio.html",
-				audio_url = audio_url)
+				audio_url = audio_url, 
+				vm_client_id = vm_client_id)
 
 @flask_login.login_required
 @app.route('/play_recording', methods=['GET', 'POST'])
