@@ -3,12 +3,6 @@ from ehhapp_twilio import *
 from ehhapp_twilio.database_helpers import *
 from ehhapp_twilio.backgroundtasks import *
 
-import dataset
-
-def open_db():
-	db = dataset.connect(dataset_db)
-	return db
-	
 @app.route("/auth_menu", methods=['GET','POST'])
 def auth_menu():
 	resp = twilio.twiml.Response()
