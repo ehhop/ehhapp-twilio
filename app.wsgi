@@ -1,4 +1,4 @@
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
 
-from ehhapp-twilio import app as application
+from ehhapp_twilio import app as application

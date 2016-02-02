@@ -1,5 +1,7 @@
 from ehhapp_twilio import *
 from ehhapp_twilio.database_helpers import *
+from ehhapp_twilio.email_helper import *
+
 from celery import Celery
 celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
 celery.conf.update(app.config)
@@ -22,8 +24,9 @@ def save_secure_message(recording_url, save_name):
 
 @celery.task
 def send_message(remind_id, to_phone):
-	execfile(base_dir + "/gdatabase.py")
-	execfile(base_dir + "/email_helper.py")
+	from ehhapp_twilio import *
+	from ehhapp_twilio.database_helpers import *
+	from ehhapp_twilio.email_helper import *
 	from twilio.rest import TwilioRestClient
 	client = TwilioRestClient(twilio_AccountSID, twilio_AuthToken)
 	call = client.calls.create(url="https://twilio.ehhapp.org/secure_message/callback/" + str(remind_id),
@@ -34,8 +37,9 @@ def send_message(remind_id, to_phone):
 
 @celery.task
 def deliver_callback(remind_id, from_phone):
-	execfile(base_dir + "/gdatabase.py")
-	execfile(base_dir + "/email_helper.py")
+	from ehhapp_twilio import *
+	from ehhapp_twilio.database_helpers import *
+	from ehhapp_twilio.email_helper import *
 	from twilio.rest import TwilioRestClient
 	client = TwilioRestClient(twilio_AccountSID, twilio_AuthToken)
 	call = client.calls.create(url="https://twilio.ehhapp.org/secure_message/delivered/" + str(remind_id),

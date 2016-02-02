@@ -1,6 +1,7 @@
 #!/usr/bin/python
 from ehhapp_twilio import *
 from ehhapp_twilio.database_helpers import *
+from ehhapp_twilio.backgroundtasks import *
 
 @app.route("/handle_key/sp/clinic_open_menu", methods=["GET", "POST"])
 def sp_clinic_open_menu():
@@ -19,28 +20,28 @@ def sp_clinic_open_menu():
 	# appointment today
 	if digit == '1':
 		# now transferring your call
-		resp.play("https://s3.amazonaws.com/ehhapp-phone/sp_xfer_call.mp3")
+		resp.play("/assets/audio/sp_xfer_call.mp3")
 		# dial current CM
 		resp.dial(oncall_current_phone)
 		# if the call fails
-		resp.play("https://s3.amazonaws.com/ehhapp-phone/sp_try_again.mp3")
+		resp.play("/assets/audio/sp_try_again.mp3")
 		# replay initial menu
 		with resp.gather(numDigits=1, action="/handle_key/sp/clinic_open_menu", method="POST") as g:
 			# spanish: list options 1-4 similar to english
 			for i in range(0,3):
-				g.play('https://s3.amazonaws.com/ehhapp-phone/sp_clinic_open_menu.mp3')
+				g.play('/assets/audio/sp_clinic_open_menu.mp3')
 				g.pause(length=5)
 	# not been here before
 	elif digit in ['2', '3', '4']:
 		return redirect('/sp/take_message/' + digit)
 	# accidential key press
 	else:
-		resp.play("https://s3.amazonaws.com/ehhapp-phone/sp_incorrect_key.mp3")
+		resp.play("/assets/audio/sp_incorrect_key.mp3")
 		resp.pause(length=3)
 		with resp.gather(numDigits=1, action="/handle_key/sp/clinic_open_menu", method="POST") as g:
 			# spanish: list options 1-4 similar to english
 			for i in range(0,3):
-				g.play('https://s3.amazonaws.com/ehhapp-phone/sp_clinic_open_menu.mp3')
+				g.play('/assets/audio/sp_clinic_open_menu.mp3')
 				g.pause(length=5)
 	return str(resp)
 
@@ -53,12 +54,12 @@ def sp_clinic_closed_menu():
 	if intent in ['2','3','4']:
 		return redirect("/sp/take_message/" + intent)
 	else:
-		resp.play("https://s3.amazonaws.com/ehhapp-phone/sp_incorrect_key.mp3")
+		resp.play("/assets/audio/sp_incorrect_key.mp3")
 		resp.pause(length=3)
 		with resp.gather(numDigits=1, action="/handle_key/sp/clinic_closed_menu", method="POST") as g:
 			# spanish: list options 2-4 similar to english
 			for i in range(0,3):
-				g.play('https://s3.amazonaws.com/ehhapp-phone/sp_clinic_closed_menu.mp3')
+				g.play('/assets/audio/sp_clinic_closed_menu.mp3')
 				g.pause(length=5)
 	return str(resp)
 	
@@ -70,11 +71,11 @@ def sp_take_message(intent):
 	
 	if intent == '3':
 		#spanish: Please leave a message for us after the tone. We will call you back as soon as possible.
-		resp.play("https://s3.amazonaws.com/ehhapp-phone/sp_urgent_message.mp3")
+		resp.play("/assets/audio/sp_urgent_message.mp3")
 	if intent in ['2','4']:
 		#spanish: Please leave a message for us after the tone. We will call you back within one day.
-		resp.play("https://s3.amazonaws.com/ehhapp-phone/sp_nonurgent_message.mp3")
-	resp.play("https://s3.amazonaws.com/ehhapp-phone/sp_vm_instructions.mp3")
+		resp.play("/assets/audio/sp_nonurgent_message.mp3")
+	resp.play("/assets/audio/sp_vm_instructions.mp3")
 
 	# save recording after received at next step
 	after_record = '/sp/handle_recording/' + intent
@@ -94,5 +95,5 @@ def sp_handle_recording(intent):
 	
 	###if the message was successfully sent... TODO to check
 	# Your message was sent. Thank you for contacting EHHOP. Goodbye!
-	resp.play("https://s3.amazonaws.com/ehhapp-phone/sp_sent_message.mp3")
+	resp.play("/assets/audio/sp_sent_message.mp3")
 	return str(resp)

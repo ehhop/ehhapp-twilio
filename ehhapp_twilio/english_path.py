@@ -1,6 +1,7 @@
 #!/usr/bin/python
 from ehhapp_twilio import *
 from ehhapp_twilio.database_helpers import *
+from ehhapp_twilio.backgroundtasks import *
 
 @app.route("/handle_key/hello", methods=["GET", "POST"])
 def handle_key_hello():
@@ -24,7 +25,7 @@ def handle_key_hello():
 				#For all other non-urgent concerns, please press 7.
 				#To hear this menu again, stay on the line.
 				for i in range(0,3):
-					g.play("https://s3.amazonaws.com/ehhapp-phone/clinic_open_menu.mp3")
+					g.play("/assets/audio/clinic_open_menu.mp3")
 					g.pause(length=5)
 		else:
 			with resp.gather(numDigits=1, action="/handle_key/clinic_closed_menu", method="POST") as g:
@@ -37,34 +38,34 @@ def handle_key_hello():
 				#For all other non-urgent concerns, please press 7.
 				#To hear this menu again, stay on the line.
 				for i in range(0,3):
-					g.play("https://s3.amazonaws.com/ehhapp-phone/clinic_closed_menu.mp3")
+					g.play("/assets/audio/clinic_closed_menu.mp3")
 					g.pause(length=5)
 					
 	elif digit == '2':
 		'''instructions in spanish selected'''
 		# spanish: if this is an emerg, dial 911
-		resp.play('https://s3.amazonaws.com/ehhapp-phone/sp_emerg_911.mp3')
+		resp.play('/assets/audio/sp_emerg_911.mp3')
 		if day_of_week == 5: #clinic is open on Saturdays
 			with resp.gather(numDigits=1, action="/handle_key/sp/clinic_open_menu", method="POST") as g:
 				# spanish: list options 1-4 similar to english
 				for i in range(0,3):
-					g.play('https://s3.amazonaws.com/ehhapp-phone/sp_clinic_open_menu.mp3')
+					g.play('/assets/audio/sp_clinic_open_menu.mp3')
 					g.pause(length=5)
 		else: #clinic not open
 			with resp.gather(numDigits=1, action="/handle_key/sp/clinic_closed_menu", method="POST") as g:
 				# spanish: list options 2-4 similar to english
 				for i in range(0,3):
-					g.play('https://s3.amazonaws.com/ehhapp-phone/sp_clinic_closed_menu.mp3')
+					g.play('/assets/audio/sp_clinic_closed_menu.mp3')
 					g.pause(length=5)
 	elif digit == "3": 
 		'''extension feature'''
 		with resp.gather(numDigits=4, action="/dial_extension", method="POST") as g:
-			g.play('https://s3.amazonaws.com/ehhapp-phone/pleasedial4digit.mp3')
+			g.play('/assets/audio/pleasedial4digit.mp3')
 		
 	elif digit == '*':
 		'''auth menu'''
 		with resp.gather(numDigits=8, action='/auth_menu', method="POST") as g:
-			g.play('https://s3.amazonaws.com/ehhapp-phone/enterpasscode.mp3')
+			g.play('/assets/audio/enterpasscode.mp3')
 	
 	else:
 		'''They have pressed an incorrect key.'''
@@ -90,11 +91,11 @@ def clinic_open_menu():
 	# appointment today
 	if digit == '1':
 		# now transferring your call
-		resp.play("https://s3.amazonaws.com/ehhapp-phone/xfer_call.mp3")
+		resp.play("/assets/audio/xfer_call.mp3")
 		# dial current CM
 		resp.dial(oncall_current_phone)
 		# if the call fails
-		resp.play('https://s3.amazonaws.com/ehhapp-phone/allbusy_trylater.mp3')
+		resp.play('/assets/audio/allbusy_trylater.mp3')
 		# replay initial menu
 		with resp.gather(numDigits=1, action="/handle_key/clinic_open_menu", method="POST") as g:
 				#If you have an appointment today, please press 1. 
@@ -102,14 +103,14 @@ def clinic_open_menu():
 				#If you are an EHHOP patient and have an urgent medical concern, please press 3.
 				#If you are an EHHOP patient and have a question about medications, appointments, 
 				#or other matters, please press 4.
-				g.play("https://s3.amazonaws.com/ehhapp-phone/clinic_open_menu.mp3")
+				g.play("/assets/audio/clinic_open_menu.mp3")
 				g.pause(length=5)
 	# not been here before
 	elif digit in ['2', '3', '4','5','6','7']:
 		return redirect('/take_message/' + digit)
 	# accidential key press
 	else:
-		resp.play('https://s3.amazonaws.com/ehhapp-phone/incorrectkey.mp3')
+		resp.play('/assets/audio/incorrectkey.mp3')
 		resp.pause(length=3)
 		with resp.gather(numDigits=1, action="/handle_key/clinic_open_menu", method="POST") as g:
 			#If you have an appointment today, please press 1. 
@@ -120,7 +121,7 @@ def clinic_open_menu():
 			#If you are an EHHOP patient and have a question about a bill you received, please press 6.
 			#For all other non-urgent concerns, please press 7.
 			#To hear this menu again, stay on the line.
-			g.play("https://s3.amazonaws.com/ehhapp-phone/clinic_open_menu.mp3")
+			g.play("/assets/audio/clinic_open_menu.mp3")
 			g.pause(length=5)
 	return str(resp)
 
@@ -133,7 +134,7 @@ def clinic_closed_menu():
 	if intent in ['2','3','4','5','6','7']:
 		return redirect("/take_message/" + intent)
 	else:
-		resp.play('https://s3.amazonaws.com/ehhapp-phone/incorrectkey.mp3')
+		resp.play('/assets/audio/incorrectkey.mp3')
 		resp.pause(length=3)
 		with resp.gather(numDigits=1, action="/handle_key/clinic_closed_menu", method="POST") as g: 
 			#If you have not been to EHHOP before, please press 2.
@@ -143,7 +144,7 @@ def clinic_closed_menu():
 			#If you are an EHHOP patient and have a question about a bill you received, please press 6.
 			#For all other non-urgent concerns, please press 7.
 			#To hear this menu again, stay on the line.
-			g.play("https://s3.amazonaws.com/ehhapp-phone/clinic_closed_menu.mp3")
+			g.play("/assets/audio/clinic_closed_menu.mp3")
 			g.pause(length=5)
 	return str(resp)
 	
@@ -160,12 +161,12 @@ def take_message(intent):
 	
 	if intent == '3':
 		#Please leave a message for us after the tone. Make sure to let us know what times we can call you back. We will call you back as soon as possible.
-		resp.play("https://s3.amazonaws.com/ehhapp-phone/urgent_message.mp3")
+		resp.play("/assets/audio/urgent_message.mp3")
 	else:
 		#Please leave a message for us after the tone. Make sure to let us know what times we can call you back. We will call you back within one day.
-		resp.play("https://s3.amazonaws.com/ehhapp-phone/nonurgent_message.mp3")
+		resp.play("/assets/audio/nonurgent_message.mp3")
 
-	#resp.play("https://s3.amazonaws.com/ehhapp-phone/vm_instructions.mp3")
+	#resp.play("/assets/audio/vm_instructions.mp3")
 
 	# after patient leaves message, direct them to next step
 	
@@ -191,7 +192,7 @@ def handle_recording(intent):
 
 	###if the message was successfully sent... TODO to check
 	# Your message was sent. Thank you for contacting EHHOP. Goodbye!
-	resp.play("https://s3.amazonaws.com/ehhapp-phone/sent_message.mp3")
+	resp.play("/assets/audio/sent_message.mp3")
 	return str(resp)
 
 @app.route("/dial_extension", methods=["GET", "POST"])
@@ -202,16 +203,16 @@ def dial_extension():
 	try:
 		return_num = database.lookup_phone_by_extension(int(digits))
 	except:
-		resp.play('https://s3.amazonaws.com/ehhapp-phone/couldntfindext.mp3')
+		resp.play('/assets/audio/couldntfindext.mp3')
 		resp.pause(length=3)
 		with resp.gather(numDigits=4, action="/dial_extension", method="POST") as g:
-			g.play('https://s3.amazonaws.com/ehhapp-phone/pleasedial4digit.mp3')
+			g.play('/assets/audio/pleasedial4digit.mp3')
 		return str(resp)
 	if return_num == None:
-		resp.play('https://s3.amazonaws.com/ehhapp-phone/couldntfindext.mp3')
+		resp.play('/assets/audio/couldntfindext.mp3')
 		resp.pause(length=3)
 		with resp.gather(numDigits=4, action="/dial_extension", method="POST") as g:
-			g.play('https://s3.amazonaws.com/ehhapp-phone/pleasedial4digit.mp3')
+			g.play('/assets/audio/pleasedial4digit.mp3')
 	else:
 		resp.say("Sending you to the mailbox of " + return_num[0], voice='alice', language='en-US')
 		resp.pause(length=1)
@@ -228,11 +229,11 @@ def find_in_schedule(person_type):
 		if return_names != []:
 			return_num = database.lookup_phone_by_name(return_names[0])
 	except:
-		resp.play('https://s3.amazonaws.com/ehhapp-phone/systemfailure.mp3')
+		resp.play('/assets/audio/systemfailure.mp3')
 		return str(resp)
 		
 	if return_names == []:
-		resp.play('https://s3.amazonaws.com/ehhapp-phone/couldntfindpersonindb.mp3')
+		resp.play('/assets/audio/couldntfindpersonindb.mp3')
 	else:
 		for name in return_names:
 			return_num = database.lookup_phone_by_name(name)
@@ -240,7 +241,7 @@ def find_in_schedule(person_type):
 				resp.say("Connecting you with " + name, voice='alice', language='en-US')
 				resp.pause(length=3)
 				resp.dial(return_num, callerId='+18622425952')
-		resp.play('https://s3.amazonaws.com/ehhapp-phone/callfailed-goodbye.mp3')
+		resp.play('/assets/audio/callfailed-goodbye.mp3')
 	return str(resp)
 
 @app.route("/find_person/<person_type>/", methods=["GET", "POST"])
@@ -251,16 +252,16 @@ def find_person(person_type):
         try:
                 return_nums = database.lookup_name_by_position(person_type)      
         except:
-                resp.play('https://s3.amazonaws.com/ehhapp-phone/systemfailure.mp3')
+                resp.play('/assets/audio/systemfailure.mp3')
                 return str(resp)
 
         if return_num == []:
-                resp.play('https://s3.amazonaws.com/ehhapp-phone/couldntfindpersonindb.mp3')
+                resp.play('/assets/audio/couldntfindpersonindb.mp3')
         else:
                 for return_num in return_nums:
                         if return_num != None:
                                 resp.say("Connecting you with " + return_num[0], voice='alice', language='en-US')
                                 resp.pause(length=3)
                                 resp.dial(return_num[1], callerId='+18622425952')
-                resp.play('https://s3.amazonaws.com/ehhapp-phone/callfailed-goodbye.mp3')
+                resp.play('/assets/audio/callfailed-goodbye.mp3')
         return str(resp)
