@@ -1,7 +1,11 @@
-import json, re, os
+#!/usr/bin/python
+from ehhapp_twilio import *
+from ehhapp_twilio.config import *
+
+import json, re, os, pytz
 import gspread
 from oauth2client.client import SignedJwtAssertionCredentials
-execfile(os.path.dirname(os.path.realpath(__file__)) + "/params.conf")
+from datetime import datetime, timedelta, date, time
 
 json_key = json.load(open(google_oauth2_file))
 scope = ['https://spreadsheets.google.com/feeds']
@@ -65,3 +69,25 @@ class EHHOPdb:
 				people.append([record['Name'], '+1' + self.sanitize.sub('', record['Telephone']), record['Email']])
 		return people # return empty list
 
+def getOnCallPhoneNum():
+	database = EHHOPdb(credentials)
+        return_num = None
+        try:
+                return_names = database.lookup_name_in_schedule("On Call Medical Clinic TS", getSatDate())
+                if return_names != []:
+                        return_num = database.lookup_phone_by_name(return_names[0])
+		return return_num
+        except:
+                return fallback_phone
+
+def getSatDate():
+        # get next saturday's date
+        time_now = datetime.now(pytz.timezone('US/Eastern'))
+        day_of_week = time_now.weekday()
+        addtime = None
+        if day_of_week == 6:
+                addtime=timedelta(6)
+        else:
+                addtime=timedelta(5-day_of_week)
+        satdate = (time_now+addtime).strftime('%-m/%-d/%Y')
+        return satdate

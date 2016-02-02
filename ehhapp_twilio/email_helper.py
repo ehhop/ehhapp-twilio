@@ -1,13 +1,14 @@
+#!/usr/bin/python
+from ehhapp_twilio import *
+from ehhapp_twilio.database_helpers import *
+from ehhapp_twilio.config import *
+
 import pytz, smtplib, requests, shutil, random, string, re, os
 from ftplib import FTP_TLS
 from datetime import datetime, timedelta
 from email.mime.text import MIMEText
 from requests.auth import HTTPBasicAuth
 from twilio.rest import TwilioRestClient
-from gdatabase import *
-
-execfile("/var/wsgiapps/ehhapp-twilio/params.conf")
-base_dir = "/var/wsgiapps/ehhapp-twilio"
 
 # user/pass to log into Twilio to retrieve files
 auth_combo=HTTPBasicAuth(twilio_AccountSID, twilio_AuthToken)
@@ -44,12 +45,12 @@ def send_email(recording_name, intent, ani, to_emails=it_emails):
 	return None
 
 def save_file(recording_url, auth_method):
-	save_name = recording_url.split('/')[-1].split('.')[0] + "_" + randomword(16) + "." + recording_url.split(".")[-1] # take regular name and salt it
+	save_name = randomword(64) + ".wav" # take regular name and salt it
 	# we are now using HTTP basic auth to do the downloads
 	# step 0 - open up a FTP session with HIPAA box
 	session = FTP_TLS('ftp.box.com', box_username, box_password)
 	# step 1 - open a request to get the voicemail using a secure channel with Twilio
-	response = requests.get(recording_url, stream=True, auth=auth_method) # no data has been downloaded yet (just headers)
+	response = requests.get(recording_url + ".wav", stream=True, auth=auth_method) # no data has been downloaded yet (just headers)
 	# step 2 - read the response object in chunks and write it to the HIPAA box directly
 	session.storbinary('STOR recordings/' + save_name, response.raw)
 	# step 3 - cleanup
@@ -62,7 +63,7 @@ def save_file_with_name(recording_url, auth_method, save_name):
 	# step 0 - open up a FTP session with HIPAA box
 	session = FTP_TLS('ftp.box.com', box_username, box_password)
 	# step 1 - open a request to get the voicemail using a secure channel with Twilio
-	response = requests.get(recording_url, stream=True, auth=auth_method) # no data has been downloaded yet (just headers)
+	response = requests.get(recording_url + ".wav", stream=True, auth=auth_method) # no data has been downloaded yet (just headers)
 	# step 2 - read the response object in chunks and write it to the HIPAA box directly
 	session.storbinary('STOR recordings/' + save_name, response.raw)
 	# step 3 - cleanup

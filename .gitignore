@@ -2,3 +2,4 @@ venv
 *.pyc
 *.conf
 *.json
+config.py
