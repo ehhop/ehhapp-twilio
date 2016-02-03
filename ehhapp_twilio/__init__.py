@@ -11,6 +11,7 @@ app.config['CELERY_BROKER_URL'] = 'redis://:' + redis_pass + '@localhost:6379/0'
 app.config['CELERY_RESULT_BACKEND'] = 'redis://:' + redis_pass + '@localhost:6379/0'
 app.config['CELERY_ENABLE_UTC'] = False
 app.config['SQLALCHEMY_DATABASE_URI'] = sqlalchemy_db
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.secret_key = flask_secret_key
 app.debug = True
 
