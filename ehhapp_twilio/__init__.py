@@ -18,6 +18,7 @@ app.debug = True
 client = TwilioRestClient(twilio_AccountSID, twilio_AuthToken)
 auth_combo=HTTPBasicAuth(twilio_AccountSID, twilio_AuthToken)
 
+from ehhapp_twilio.database import db_session
 import ehhapp_twilio.backgroundtasks
 import ehhapp_twilio.database_helpers
 import ehhapp_twilio.voicemail_helpers
@@ -26,3 +27,7 @@ import ehhapp_twilio.english_path
 import ehhapp_twilio.spanish_path
 import ehhapp_twilio.ehhop_members_path
 import ehhapp_twilio.welcome
+
+@app.teardown_appcontext
+def shutdown_session(exception=None):
+    db_session.remove()

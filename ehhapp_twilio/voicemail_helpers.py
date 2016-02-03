@@ -1,9 +1,10 @@
 #!/usr/bin/python
 from ehhapp_twilio import *
 from ehhapp_twilio.database_helpers import *
+from ehhapp_twilio.database import db_session
+from ehhapp_twilio.models import User
 
 import flask.ext.login as flask_login
-from flask_sqlalchemy import SQLAlchemy
 from oauth2client import client as gauthclient
 from oauth2client import crypt
 from ftplib import FTP_TLS
@@ -12,38 +13,6 @@ from ftplib import FTP_TLS
 login_manager = flask_login.LoginManager()
 login_manager.init_app(app)
 
-#SQLAlchemy
-db2 = SQLAlchemy(app)
-
-class User(db2.Model):
-    """An admin user capable of viewing reports.
-
-    :param str email: email address of user
-    :param str google_token: callback token
-
-    """
-    __tablename__ = 'user'
-
-    email = db2.Column(db2.String, primary_key=True)
-    google_token = db2.Column(db2.String)
-    authenticated = db2.Column(db2.Boolean, default=False)
-
-    def is_active(self):
-        """True, as all users are active."""
-        return True
-
-    def get_id(self):
-        """Return the email address to satisfy Flask-Login's requirements."""
-        return self.email
-
-    def is_authenticated(self):
-        """Return True if the user is authenticated."""
-        return self.authenticated
-
-    def is_anonymous(self):
-        """False, as anonymous users aren't supported."""
-        return False
-    
 @login_manager.user_loader
 def user_loader(user_id):
 	return User.query.get(user_id)
@@ -73,8 +42,8 @@ def googleOAuthTokenVerify():
 	user = User.query.get(useremail)
 	if user:
 		user.authenticated=True
-		db2.session.add(user)
-		db2.session.commit()
+		db_session.add(user)
+		db_session.commit()
 		flask_login.login_user(user, remember=True)
 	else:
 		if '@icahn.mssm.edu' not in useremail:
@@ -82,8 +51,8 @@ def googleOAuthTokenVerify():
 		else:
 			user = User(email = useremail, google_token=userid)
 			user.authenticated=True
-			db2.session.add(user)
-			db2.session.commit()
+			db_session.add(user)
+			db_session.commit()
 			flask_login.login_user(user, remember=False)
 	return useremail
 
@@ -93,8 +62,8 @@ def logout():
     """Logout the current user."""
     user = flask_login.current_user
     user.authenticated = False
-    db2.session.add(user)
-    db2.session.commit()
+    db_session.add(user)
+    db_session.commit()
     flask_login.logout_user()
     return "Logged out."
 
@@ -122,12 +91,16 @@ def play_vm_recording():
 	
 	def get_file(filename):
 		# get file
-		chunks = []
+		class VMFile:
+  			def __init__(self):
+    				self.data = ""
+  			def __call__(self,s):
+     				self.data += s
+		v = VMFile()
 		session = FTP_TLS('ftp.box.com', box_username, box_password)
-		session.retrbinary('RETR recordings/' + filename, chunks.append)
+		session.retrbinary('RETR recordings/' + filename, v)
 		session.close()
-		for chunk in chunks:
-			yield chunk
+		return v.data
 	
 	# serve file
 	return Response(get_file(filename), mimetype='audio/wav')

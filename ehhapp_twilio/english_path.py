@@ -225,22 +225,20 @@ def find_in_schedule(person_type):
 	database = EHHOPdb(credentials)
 	return_num = None
 	try:
-		return_names = database.lookup_name_in_schedule(person_type, getSatDate())
+		satdate = str(ehhapp_twilio.database_helpers.getSatDate())
+		return_names = database.lookup_name_in_schedule(person_type, satdate)
 		if return_names != []:
 			return_num = database.lookup_phone_by_name(return_names[0])
 	except:
 		resp.play('/assets/audio/systemfailure.mp3')
 		return str(resp)
 		
-	if return_names == []:
+	if return_num == None:
 		resp.play('/assets/audio/couldntfindpersonindb.mp3')
 	else:
-		for name in return_names:
-			return_num = database.lookup_phone_by_name(name)
-			if return_num != None:
-				resp.say("Connecting you with " + name, voice='alice', language='en-US')
-				resp.pause(length=3)
-				resp.dial(return_num, callerId='+18622425952')
+		resp.say("Connecting you with " + return_names[0], voice='alice', language='en-US')
+		resp.pause(length=3)
+		resp.dial(return_num, callerId='+18622425952')
 		resp.play('/assets/audio/callfailed-goodbye.mp3')
 	return str(resp)
 

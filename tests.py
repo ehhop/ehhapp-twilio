@@ -1,13 +1,15 @@
 #!/usr/bin/python 
 
 import ehhapp_twilio
+from ehhapp_twilio.config import *
 import unittest
 from flask import Flask
+import flask.ext.login as flask_login
 from flask.ext.testing import LiveServerTestCase
-import urllib2
-import time
-routes = ["/",
+import urllib2, time, os
+routes = ["/?From=1234567890",
 	"/dial_extension",
+	"/dial_extension?Digits=9999",
 	"/dial_extension?Digits=8144",
 	"/next_clinic/CM%201/",
 	"/find_person/Twilio/",
@@ -54,6 +56,7 @@ class HelloTest(unittest.TestCase):
 	app.config['LIVESERVER_PORT'] = 5000
 	app.debug = True
 	self.app = ehhapp_twilio.app.test_client()
+	self.next_step = ''
 
     def test_all_routes(self):
 	print "testing..."
@@ -62,7 +65,23 @@ class HelloTest(unittest.TestCase):
 		print r, response.status_code
 		assert response.status_code in [200, 302]
 	pass
+	
+    def test_redis_is_running(self):
+	print "checking if redis is running... "
+	result = os.popen("redis-cli -a " + redis_pass + " ping").read()
+	assert "PONG" in result
 
+    def test_celery_VM_upload_download(self):
+	print "checking celery and VM downloads"
+	upload = ehhapp_twilio.backgroundtasks.async_process_message.apply_async(args=["http://www.kozco.com/tech/piano2.wav", 0, "1234567890", "Twilio"], kwargs={'to_emails':"rneff@ehhapp.org"})
+	assert ".wav" in upload.get()
+	download = self.app.get("/play_recording?filename=" + upload.get())
+	assert download.status_code in [200, 302]
+	assert "Not Authorized" in download.data
+
+    def test_secure_setnum(self):
+	response = self.app.get('/secure_message/setnum/?Digits=1234567890&From=9739608144')
+	assert response.status_code in [200,302]
 
 if __name__ == '__main__':
 	unittest.main()

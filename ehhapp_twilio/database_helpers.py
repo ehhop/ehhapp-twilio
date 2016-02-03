@@ -6,15 +6,10 @@ import json, re, os, pytz
 import gspread
 from oauth2client.client import SignedJwtAssertionCredentials
 from datetime import datetime, timedelta, date, time
-import dataset
 
 json_key = json.load(open(google_oauth2_file))
 scope = ['https://spreadsheets.google.com/feeds']
 credentials = SignedJwtAssertionCredentials(json_key['client_email'], json_key['private_key'], scope)
-
-def open_db():
-        db = dataset.connect(dataset_db)
-        return db
 
 class EHHOPdb:
 	

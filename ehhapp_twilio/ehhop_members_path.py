@@ -2,6 +2,8 @@
 from ehhapp_twilio import *
 from ehhapp_twilio.database_helpers import *
 from ehhapp_twilio.backgroundtasks import *
+from ehhapp_twilio.database import db_session
+from ehhapp_twilio.models import Reminder
 
 @app.route("/auth_menu", methods=['GET','POST'])
 def auth_menu():
@@ -59,18 +61,11 @@ def secure_message_setnum():
 	number=request.values.get("Digits", None)
 	from_phone=request.values.get("From", None)
 	
-	db = open_db()	
-	r = db['reminders']
 	# add phone number to reminders, move to next step
-	remind_id = r.insert(dict(to_phone=number, 
-			from_phone=from_phone,
-			time=None,
-			delivered=False,
-			freq=24,
-			message=None,
-			name=None,
-			passcode=None,
-			spanish=None))
+	reminder = Reminder(to_phone=number, from_phone=from_phone)
+	db_session.add(reminder)
+	db_session.commit()
+	remind_id = reminder.id
 	
 	with resp.gather(numDigits=6, action='/secure_message/setpass/' + str(remind_id), method='POST') as g:
 		g.play('/assets/audio/youdialed.mp3')
@@ -84,19 +79,17 @@ def secure_message_setpass(remind_id):
 	resp = twilio.twiml.Response()
 	passcode=request.values.get("Digits", None)
 
-	db = open_db()	
-	r = db['reminders']
-
 	try:
 		# find the record in the DB that corresponds to this call
-		record = r.find_one(id=remind_id)
+		record = Reminder.query.get(remind_id)
 	except:
 		resp.play('/assets/audio/vmsystemfail.mp3')
 		return str(resp)
 
 	# set a passcode and update the DB
-	record['passcode'] = passcode
-	r.update(record, ['id'])
+	record.passcode = passcode
+	db_session.add(record)
+	db_session.commit()
 
 	# ask for a reminder time
 	with resp.gather(numDigits=1, action='/secure_message/settime/' + str(remind_id), method='POST') as g:
@@ -111,11 +104,9 @@ def secure_message_settime(remind_id):
 	resp = twilio.twiml.Response()
 	choice=request.values.get("Digits", None)
 
-	db = open_db()	
-	r = db['reminders']
 	try:
 		# find the record in the DB that corresponds to this call
-		record = r.find_one(id=remind_id)
+		record = Reminder.query.get(remind_id)
 	except:
 		resp.play('/assets/audio/vmsystemfail.mp3')
 		return str(resp)
@@ -131,8 +122,9 @@ def secure_message_settime(remind_id):
 		time_set = nowtime
 	
 	# set the reminder time and update the DB
-	record['time'] = str(time_set)
-        r.update(record, ['id'])
+	record.time = str(time_set)
+        db_session.add(record)
+	db_session.commit()
 	
 	# now we need to record the message
 	resp.play('/assets/audio/leavesecuremessage.mp3')
@@ -144,12 +136,10 @@ def secure_message_settime(remind_id):
 def secure_message_setmessage(remind_id):
 	resp = twilio.twiml.Response()
 	recording_url = request.values.get("RecordingUrl", None)
-	
-	db = open_db()	
-	r = db['reminders']
+
 	try:
 		# find the record in the DB that corresponds to this call
-		record = r.find_one(id=remind_id)
+		record = Reminder.query.get(remind_id)
 	except:
 		resp.play('/assets/audio/vmsystemfail.mp3')
 		return str(resp)
@@ -159,8 +149,9 @@ def secure_message_setmessage(remind_id):
 	# set the secure recording URL location
 	new_recording_url = 'https://twilio.ehhapp.org/play_recording?filename=' + save_name
 	# set the message url and update the db
-	record['message'] = new_recording_url
-        r.update(record, ['id'])
+	record.message = new_recording_url
+        db_session.add(record)
+	db_session.commit()
 
 	# download and save the message (async)
 	save_secure_message.apply_async(args=[recording_url, save_name])
@@ -174,11 +165,9 @@ def secure_message_send(remind_id):
 	resp = twilio.twiml.Response()
 	choice=request.values.get("Digits", None)
 
-	db = open_db()	
-	r = db['reminders']
 	try:
 		# find the record in the DB that corresponds to this call
-		record = r.find_one(id=remind_id)
+		record = Reminder.query.get(remind_id)
 	except:
 		resp.play('/assets/audio/vmsystemfail.mp3')
 		return str(resp)
@@ -193,11 +182,9 @@ def secure_message_send(remind_id):
 def secure_message_callback(remind_id):
 	resp = twilio.twiml.Response()
 
-	db = open_db()	
-	r = db['reminders']
 	try:
 		# find the record in the DB that corresponds to this call
-		record = r.find_one(id=remind_id)
+		record = Reminder.query.get(remind_id)
 	except:
 		resp.play('/assets/audio/hello_importantmessage.mp3')
 		resp.play('/assets/audio/messageretrievalfail.mp3')
@@ -213,11 +200,9 @@ def secure_message_passauth(remind_id):
 	resp = twilio.twiml.Response()
 	choice=request.values.get("Digits", None)
 
-	db = open_db()	
-	r = db['reminders']
 	try:
 		# find the record in the DB that corresponds to this call
-		record = r.find_one(id=remind_id)
+		record = Reminder.query.get(remind_id)
 	except:
 		resp.play('/assets/audio/messageretrievalfail.mp3')
 		return str(resp)
@@ -231,23 +216,23 @@ def secure_message_playback(remind_id):
 	resp = twilio.twiml.Response()
 	passcode=request.values.get("Digits", None)
 
-	db = open_db()	
-	r = db['reminders']
 	# find the record in the DB that corresponds to this call
-	record = r.find_one(id=remind_id)
+	record = Reminder.query.get(remind_id)
 	
-	if record['passcode'] != passcode:
+	if record.passcode != passcode:
 		with resp.gather(numDigits=6, action='/secure_message/playback/' + str(remind_id), method='POST') as g:
 			g.play('/assets/audio/passcodeincorrect.mp3')
 		return str(resp)
 	else:
-		record['delivered'] = True
-		r.update(record, ['id'])
+		record.delivered = True
+		db_session.add(record)
+		db_session.commit()
+		
 		deliver_callback.apply_async(args=[remind_id, record['from_phone']])
 		resp.play('/assets/audio/pleasewaittohearmessage.mp3')
-		resp.play(record['message'])
+		resp.play(record.message)
 		resp.play('/assets/audio/messagewillrepeat.mp3')
-		resp.play(record['message'], loop=5)
+		resp.play(record.message, loop=5)
 		resp.play('/assets/audio/goodbye.mp3')
 		return str(resp)
 
@@ -255,13 +240,11 @@ def secure_message_playback(remind_id):
 def secure_message_delivered(remind_id):
 	resp = twilio.twiml.Response()
 
-	db = open_db()
-	r = db['reminders']
 	# find the record in the DB that corresponds to this call
-	record = r.find_one(id=remind_id)
+	record = Reminder.query.get(remind_id)
 	
 	resp.play('/assets/audio/deliverpart1.mp3')
-	resp.say(' '.join(record["to_phone"]))
+	resp.say(' '.join(record.to_phone))
 	resp.play('/assets/audio/deliverpart2.mp3')
 	return str(resp)
 

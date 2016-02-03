@@ -1,6 +1,7 @@
 #!/usr/bin/python
 from ehhapp_twilio import *
-from ehhapp_twilio.database_helpers import *
+from ehhapp_twilio.database import db_session
+from ehhapp_twilio.models import Reminder
 
 @app.route('/', methods=['GET', 'POST'])
 def hello_ehhop():
@@ -23,11 +24,9 @@ def hello_ehhop():
 	callerid = request.values.get('From', None)
 	if callerid != None:
 		callerid = callerid[-10:]
-		db = open_db()	
-		r = db['reminders']
-		record = r.find_one(to_phone=callerid, delivered=False, order_by=['-id'])
+		record = Reminder.query.filter_by(to_phone=callerid, delivered=False).first()
 		if record != None:
-			return redirect(url_for('secure_message_callback', remind_id = record['id']))
+			return redirect(url_for('secure_message_callback', remind_id = record.id))
 	
 	resp = twilio.twiml.Response()
 	with resp.gather(numDigits=1, action="/handle_key/hello", method="POST") as g:

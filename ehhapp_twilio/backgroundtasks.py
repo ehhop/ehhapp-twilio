@@ -8,8 +8,8 @@ celery.conf.update(app.config)
 
 @celery.task(name='tasks.async_process_message')
 def async_process_message(recording_url, intent, ani, positions, to_emails=None):
-	process_recording(recording_url, intent, ani, positions, to_emails=to_emails)
-	return None
+	name = process_recording(recording_url, intent, ani, positions, to_emails=to_emails)
+	return name
 
 def set_async_message_deliver(record, remind_id):
 	deliver_time = datetime.strptime(record['time'],'%Y-%m-%d %H:%M:%S.%f')
@@ -24,11 +24,6 @@ def save_secure_message(recording_url, save_name):
 
 @celery.task
 def send_message(remind_id, to_phone):
-	from ehhapp_twilio import *
-	from ehhapp_twilio.database_helpers import *
-	from ehhapp_twilio.email_helper import *
-	from twilio.rest import TwilioRestClient
-	client = TwilioRestClient(twilio_AccountSID, twilio_AuthToken)
 	call = client.calls.create(url="https://twilio.ehhapp.org/secure_message/callback/" + str(remind_id),
 		to = to_phone,
 		from_ = twilio_number,
@@ -37,11 +32,6 @@ def send_message(remind_id, to_phone):
 
 @celery.task
 def deliver_callback(remind_id, from_phone):
-	from ehhapp_twilio import *
-	from ehhapp_twilio.database_helpers import *
-	from ehhapp_twilio.email_helper import *
-	from twilio.rest import TwilioRestClient
-	client = TwilioRestClient(twilio_AccountSID, twilio_AuthToken)
 	call = client.calls.create(url="https://twilio.ehhapp.org/secure_message/delivered/" + str(remind_id),
 		to = from_phone,
 		from_ = twilio_number,

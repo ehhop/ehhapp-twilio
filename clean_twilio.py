@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 from twilio.rest import TwilioRestClient
-execfile("/var/wsgiapps/ehhapp-twilio/params.conf")
+from ehhapp_twilio.config import *
 
 # step 1 - delete call records
 client = TwilioRestClient(twilio_AccountSID, twilio_AuthToken)
