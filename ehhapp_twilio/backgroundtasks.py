@@ -12,8 +12,8 @@ def async_process_message(recording_url, intent, ani, positions, to_emails=None)
 	return name
 
 def set_async_message_deliver(record, remind_id):
-	deliver_time = datetime.strptime(record['time'],'%Y-%m-%d %H:%M:%S.%f')
-	send_message.apply_async(args=[remind_id, record['to_phone']], eta=deliver_time)	
+	deliver_time = datetime.strptime(record.time,'%Y-%m-%d %H:%M:%S.%f')
+	send_message.apply_async(args=[remind_id, record.to_phone], eta=deliver_time)	
 	return None
 
 @celery.task

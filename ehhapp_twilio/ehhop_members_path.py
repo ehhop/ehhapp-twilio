@@ -228,11 +228,11 @@ def secure_message_playback(remind_id):
 		db_session.add(record)
 		db_session.commit()
 		
-		deliver_callback.apply_async(args=[remind_id, record['from_phone']])
+		deliver_callback.apply_async(args=[remind_id, record.from_phone])
 		resp.play('/assets/audio/pleasewaittohearmessage.mp3')
-		resp.play(record.message)
+		resp.play(record.message + "&key=" + twilio_server_key)
 		resp.play('/assets/audio/messagewillrepeat.mp3')
-		resp.play(record.message, loop=5)
+		resp.play(record.message + "&key=" + twilio_server_key, loop=5)
 		resp.play('/assets/audio/goodbye.mp3')
 		return str(resp)
 
