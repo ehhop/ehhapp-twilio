@@ -1,13 +1,16 @@
 #!/usr/bin/python
 from ehhapp_twilio import *
 from ehhapp_twilio.database_helpers import *
-from ehhapp_twilio.database import db_session
-from ehhapp_twilio.models import User
+from ehhapp_twilio.database import db_session, query_to_dict
+from ehhapp_twilio.models import User, Reminder
 
 import flask.ext.login as flask_login
 from oauth2client import client as gauthclient
 from oauth2client import crypt
 from ftplib import FTP_TLS
+import sys
+sys.path.append('/home/rneff/anaconda/lib/python2.7/site-packages')
+import pandas as pd
 
 #logins
 login_manager = flask_login.LoginManager()
@@ -73,6 +76,13 @@ def serve_vm_player():
 	return render_template("player_twilio.html",
 				audio_url = audio_url, 
 				vm_client_id = vm_client_id)
+
+@app.route('/voicemails', methods=['GET'])
+@flask_login.login_required
+def serve_vm_admin():
+	reminders = pd.DataFrame(query_to_dict(Reminder.query.all()))
+	return render_template("voicemails.html", 
+							data = reminders.to_html(classes='table table-striped'))
 
 @flask_login.login_required
 @app.route('/play_recording', methods=['GET', 'POST'])

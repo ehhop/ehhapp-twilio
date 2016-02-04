@@ -2,6 +2,7 @@ from ehhapp_twilio.config import *
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.inspection import inspect
 
 engine = create_engine(sqlalchemy_db, convert_unicode=True)
 db_session = scoped_session(sessionmaker(autocommit=False,
@@ -16,3 +17,14 @@ def init_db():
     # you will have to import them first before calling init_db()
     import ehhapp_twilio.models
     Base.metadata.create_all(bind=engine)
+	
+def query_to_dict(rset):
+		result = dict()
+		for obj in rset:
+			instance = inspect(obj)
+			for key, x in instance.attrs.items():
+				if key in result:
+					result[key].append(x.value)
+				else:
+					result[key] = [x.value]
+		return result
