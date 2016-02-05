@@ -26,7 +26,8 @@ def hello_ehhop():
 		callerid = callerid[-10:]
 		record = Reminder.query.filter_by(to_phone=callerid, delivered=False).first()
 		if record != None:
-			return redirect(url_for('secure_message_callback', remind_id = record.id))
+			if (record.passcode != None) and (record.message !=None):
+				return redirect(url_for('secure_message_callback', remind_id = record.id))
 	
 	resp = twilio.twiml.Response()
 	with resp.gather(numDigits=1, action="/handle_key/hello", method="POST") as g:

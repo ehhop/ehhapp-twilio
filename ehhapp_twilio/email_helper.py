@@ -3,7 +3,7 @@ from ehhapp_twilio import *
 from ehhapp_twilio.database_helpers import *
 from ehhapp_twilio.config import *
 
-import pytz, smtplib, requests, shutil, random, string, re, os
+import smtplib, pytz, requests, random, string, re
 from ftplib import FTP_TLS
 from datetime import datetime, timedelta
 from email.mime.text import MIMEText

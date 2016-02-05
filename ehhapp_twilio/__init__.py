@@ -3,7 +3,6 @@ from requests.auth import HTTPBasicAuth
 from ehhapp_twilio.config import *
 import twilio.twiml
 from twilio.rest import TwilioRestClient
-client = TwilioRestClient(twilio_AccountSID, twilio_AuthToken)
 
 #Flask init
 app = Flask(__name__, static_folder='')

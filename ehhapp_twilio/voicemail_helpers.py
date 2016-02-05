@@ -8,8 +8,6 @@ import flask.ext.login as flask_login
 from oauth2client import client as gauthclient
 from oauth2client import crypt
 from ftplib import FTP_TLS
-import sys
-sys.path.append('/home/rneff/anaconda/lib/python2.7/site-packages')
 
 #logins
 login_manager = flask_login.LoginManager()
@@ -79,12 +77,10 @@ def serve_vm_player():
 @app.route('/voicemails', methods=['GET'])
 @flask_login.login_required
 def serve_vm_admin():
-	import pandas as pd
-	reminders = pd.DataFrame(query_to_dict(Reminder.query.all()))
+	reminders = query_to_dict(Reminder.query.all())
 	return render_template("voicemails.html", 
-							data = reminders.to_html(classes='table table-striped'))
+				data = reminders)
 
-@flask_login.login_required
 @app.route('/play_recording', methods=['GET', 'POST'])
 def play_vm_recording():
 	twilio_client_key = request.values.get('key', None)
