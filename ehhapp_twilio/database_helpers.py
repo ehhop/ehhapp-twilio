@@ -54,6 +54,8 @@ class EHHOPdb:
 
 	def lookup_name_in_schedule(self, person_type, lookup_date):
 		# get relevant keys
+		if (person_type == '') | (person_type==None):
+			return []
 		keys = [i for i in self.schedule[0].keys() if person_type.lower() in i.lower()]
 		# get matching line in schedule (O(N) time lookup...)
 		for record in self.schedule:

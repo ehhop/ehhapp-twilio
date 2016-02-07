@@ -2,12 +2,14 @@
 from ehhapp_twilio import *
 from ehhapp_twilio.database_helpers import *
 from ehhapp_twilio.database import db_session, query_to_dict
-from ehhapp_twilio.models import User, Reminder
+from ehhapp_twilio.models import User, Reminder, Intent, Assignment
+from ehhapp_twilio.forms import *
 
 import flask.ext.login as flask_login
 from oauth2client import client as gauthclient
 from oauth2client import crypt
 from ftplib import FTP_TLS
+from flask import flash
 
 #logins
 login_manager = flask_login.LoginManager()
@@ -19,7 +21,8 @@ def user_loader(user_id):
 
 @login_manager.unauthorized_handler
 def unauthorized():
-	return 'Not Authorized'
+	return render_template('login.html', 
+				vm_client_id = vm_client_id)
 
 @app.route('/tokensignin', methods=['POST'])
 def googleOAuthTokenVerify():
@@ -65,7 +68,7 @@ def logout():
     db_session.add(user)
     db_session.commit()
     flask_login.logout_user()
-    return "Logged out."
+    return "Logged out. You can close this window now."
 
 @app.route('/flashplayer', methods=['GET'])
 def serve_vm_player():
@@ -74,12 +77,24 @@ def serve_vm_player():
 				audio_url = audio_url, 
 				vm_client_id = vm_client_id)
 
-@app.route('/voicemails', methods=['GET'])
+@app.route('/reminders', methods=['GET'])
 @flask_login.login_required
 def serve_vm_admin():
 	reminders = query_to_dict(Reminder.query.all())
 	return render_template("voicemails.html", 
 				data = reminders)
+
+@app.route('/reminders/<int:remind_id>/delete', methods=['GET'])
+@flask_login.login_required
+def delete_reminder(remind_id):
+	record = Reminder.query.get(remind_id)
+	if record == None:
+		flash('Could not find reminder in database.')
+		return redirect(url_for('serve_vm_admin'))
+	else:
+		db_session.delete(record)
+		db_session.commit()
+		return redirect(url_for('serve_vm_admin'))				
 
 @app.route('/play_recording', methods=['GET', 'POST'])
 def play_vm_recording():
@@ -112,3 +127,105 @@ def play_vm_recording():
 	
 	# serve file
 	return Response(get_file(filename), mimetype='audio/wav')
+
+@app.route('/intents', methods=['GET'])
+@flask_login.login_required
+def serve_intent_admin():
+        intents = query_to_dict(Intent.query.all())
+        return render_template("intents.html",
+                                data = intents)
+
+@app.route('/assignments', methods=['GET'])
+@flask_login.login_required
+def serve_assignment_admin():
+        assignments = query_to_dict(Assignment.query.all())
+        return render_template("assignments.html",
+                                data = assignments)
+
+@app.route('/intents/edit', methods=['GET', 'POST'])
+@flask_login.login_required
+def add_intent():
+	form = IntentForm(request.form)
+	if request.method == 'POST' and form.validate():
+		intent = Intent(form.digit.data, form.description.data, form.required_recipients.data,
+				form.distributed_recipients.data)
+		db_session.add(intent)
+		db_session.commit()
+		flash('Intent added.')
+		return redirect(url_for('serve_intent_admin'))
+	return render_template("intent_form.html", action="Add", data_type="an intent", form=form)
+
+@app.route('/intents/edit<int:intent_id>', methods=['GET', 'POST'])
+@flask_login.login_required
+def edit_intent(intent_id):
+	intent = Intent.query.get(intent_id)
+	formout = IntentForm(obj=intent)
+	form = IntentForm(request.form)
+	if request.method == 'POST' and form.validate():
+		intent.digit = form.digit.data
+		intent.description = form.description.data
+		intent.required_recipients = form.required_recipients.data
+		intent.distributed_recipients = form.distributed_recipients.data
+		db_session.add(intent)
+		db_session.commit()
+		flash('Intent edited.')
+		return redirect(url_for('serve_intent_admin'))
+	return render_template("intent_form.html", action="Edit", data_type=intent.digit, form=formout)
+
+@app.route('/assignments/edit', methods=['GET', 'POST'])
+@flask_login.login_required
+def add_assignment():
+	form = AssignmentForm(request.form)
+	if request.method == 'POST' and form.validate():
+		assignment = Assignment(form.from_phone.data, form.recipients.data)
+		db_session.add(assignment)
+		db_session.commit()
+		flash('Assignment added.')
+		return redirect(url_for('serve_assignment_admin'))
+	return render_template("intent_form.html", action="Add", data_type="an assignment", form=form)
+
+@app.route('/assignments/edit<int:assign_id>', methods=['GET', 'POST'])
+@flask_login.login_required
+def edit_assignment(assign_id):
+	assign = Assignment.query.get(assign_id)
+	formout = AssignmentForm(obj=assign)
+	form = AssignmentForm(request.form)
+	if request.method == 'POST' and form.validate():
+		assign.from_phone = form.from_phone.data
+		assign.recipients = form.recipients.data
+		db_session.add(assign)
+		db_session.commit()
+		flash('Assignment edited.')
+		return redirect(url_for('serve_assignment_admin'))
+	return render_template("intent_form.html", action="Edit", data_type=assign.from_phone, form=formout)
+
+@app.route('/intents/test<int:intent_id>', methods=['GET', 'POST'])
+@flask_login.login_required
+def test_intent(intent_id):
+	intent = Intent.query.get(intent_id)
+	if intent == None:
+		flash('ERROR: Intent not in DB.')
+		return redirect(url_for('serve_intent_admin'))		
+	db = EHHOPdb(credentials)
+	requireds = intent.required_recipients.split(',')
+	requireresult = dict()
+	flash("Required recipients:")
+	for r in requireds:
+		pos = r.strip(" ")
+		requireresult[pos] = db.lookup_name_by_position(pos)
+		flash(pos + ": " + str(requireresult[pos]))
+	assigns = intent.distributed_recipients.split(',')
+	assignresult = dict()
+	flash("Assign from these:")
+	for a in assigns:
+		pos = a.strip(" ")
+		assignresult[pos] = []
+		interresult = db.lookup_name_in_schedule(pos, getSatDate())
+		for i in interresult:
+			phone = db.lookup_phone_by_name(i)
+			assignresult[pos].append([i, phone])
+		flash(pos + ": " + str(assignresult[pos]))
+	return redirect(url_for('serve_intent_admin'))
+
+		
+

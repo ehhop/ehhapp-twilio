@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean
+from sqlalchemy import Column, Integer, String, Boolean, PickleType
 from ehhapp_twilio.database import Base
 from ehhapp_twilio.config import *
 from sqlalchemy_utils import EncryptedType
@@ -30,7 +30,7 @@ class User(Base):
 
 class Reminder(Base):
     """A secure message reminder going out and the associated callback."""
-    __tablename__ = 'reminders'
+    __tablename__ = 'reminder'
 
     id = Column(Integer, primary_key=True)
     to_phone = Column(EncryptedType(String, flask_secret_key))
@@ -50,14 +50,46 @@ class Call(Base):
 	"""A call coming in and any associated voicemail messages."""
 	__tablename__ = 'call'
 
-	id = Column(Integer, primary_key=True)
-	call_sid = Column(EncryptedType(String, flask_secret_key))
+	call_sid = Column(String, primary_key=True)
 	from_phone = Column(EncryptedType(String, flask_secret_key))
 	time = Column(EncryptedType(String, flask_secret_key))
 	message = Column(EncryptedType(String, flask_secret_key))
+	intent = Column(EncryptedType(Integer, flask_secret_key))
+	assigned_to = Column(EncryptedType(String, flask_secret_key))
 	spanish = Column(EncryptedType(Boolean, flask_secret_key), default=False)
 	actions = Column(EncryptedType(String, flask_secret_key))
-	assigned_to = Column(EncryptedType(String, flask_secret_key))
 
 	def __repr__(self):
 		return '<Call %r, From: %r, Time: %r, Message: %r>' % (self.id, self.from_phone, self.time, self.message)
+
+class Intent(Base):
+	__tablename__ = 'intent'
+	
+	id = Column(Integer, primary_key=True)
+	digit = Column(Integer)
+	description = Column(String)
+	required_recipients = Column(String)
+	distributed_recipients = Column(String)
+	
+	def __repr__(self):
+		return '<Intent %r, Digit: %r>' % (self.id, self.difit)
+
+	def __init__(self, digit=None, description=None, required_recipients=None, distributed_recipients=None):
+		self.digit = digit
+		self.description = description
+		self.required_recipients = required_recipients
+		self.distributed_recipients = distributed_recipients
+
+class Assignment(Base):
+	__tablename__ = 'assignment'
+	
+	id = Column(Integer, primary_key=True)
+	from_phone = Column(EncryptedType(String, flask_secret_key))
+	recipients = Column(String)
+
+	def __repr__(self):
+		return '<Assignment %r>' % (self.id)
+
+	def __init__(self, from_phone=None, recipients=None):
+		self.from_phone = from_phone
+		self.recipients = recipients

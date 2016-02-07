@@ -3,8 +3,8 @@ from ehhapp_twilio.database_helpers import *
 from ehhapp_twilio.email_helper import *
 
 from celery import Celery
-celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
-celery.conf.update(app.config)
+celery = Celery(app.name)
+celery.config_from_object("celeryconfig")
 
 @celery.task(name='tasks.async_process_message')
 def async_process_message(recording_url, intent, ani, positions, to_emails=None):

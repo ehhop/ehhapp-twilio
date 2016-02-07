@@ -1,0 +1,37 @@
+{% extends "layout.html" %}
+{% block body %}
+	    <div class="page-header">
+		    <h1>Intents</h1>
+	    </div>
+	    <table class="table table-hover">
+		<thead>
+			<tr>
+			<th> Digit </th>
+			<th> Description </th>
+			<th> Required Recipients </th>
+			<th> Assign From Schedule </th>
+			<th> Actions </th>
+			</tr>
+		</thead>
+		<tbody>
+		{% for i in range(0,data['id']|length) %}
+		<tr>
+			<th scope="row">{{ data['digit'][i] }}
+			<td> {{ data['description'][i] }}</td>
+			<td> {{ data['required_recipients'][i] }}</td>
+			<td> {{ data['distributed_recipients'][i] }}</td>
+			<td> 
+			<a href="https://twilio.ehhapp.org/intents/edit{{ data['id'][i] }}">Edit</a> 
+			<a href="https://twilio.ehhapp.org/intents/test{{ data['id'][i] }}">Test</a>
+				</td>
+		</tr>
+		{% endfor %}			
+		</tbody>
+	    </table>
+	    {% if data['id']|length == 0 %}
+	    <div class="alert alert-error">No intents in DB.</div>
+	    {% endif %}
+	    <a href="/intents/edit" class="btn btn-lg btn-primary">Add an intent</a>
+	    </div>
+    </div><!-- /.container -->
+{% endblock %}
