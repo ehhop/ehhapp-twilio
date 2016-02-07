@@ -1,5 +1,7 @@
 #!/usr/bin/python
 
+#this would be a great place to upload the call logs to the server!! could be added to the crontab or via celerybeat
+
 from twilio.rest import TwilioRestClient
 from ehhapp_twilio.config import *
 
