@@ -52,6 +52,13 @@ class EHHOPdb:
 				return '+1' + self.sanitize.sub('', record['Telephone']) # if we found the extension
 		return None # if no return
 
+	def lookup_email_by_name(self, name):
+		#get matching extension (O(N) time lookup...)
+		for record in self.personnel:
+			if name == record['Name']:
+				return record['Email'] # if we found the extension
+		return None # if no return
+
 	def lookup_name_in_schedule(self, person_type, lookup_date):
 		# get relevant keys
 		if (person_type == '') | (person_type==None):

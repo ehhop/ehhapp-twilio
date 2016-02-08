@@ -3,6 +3,7 @@ from requests.auth import HTTPBasicAuth
 from ehhapp_twilio.config import *
 import twilio.twiml
 from twilio.rest import TwilioRestClient
+from flask.ext.mail import Mail
 
 #Flask init
 app = Flask(__name__, static_folder='')
@@ -10,6 +11,8 @@ app.config['SQLALCHEMY_DATABASE_URI'] = sqlalchemy_db
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.secret_key = flask_secret_key
 app.debug = True
+
+mail = Mail(app)
 
 client = TwilioRestClient(twilio_AccountSID, twilio_AuthToken)
 auth_combo=HTTPBasicAuth(twilio_AccountSID, twilio_AuthToken)

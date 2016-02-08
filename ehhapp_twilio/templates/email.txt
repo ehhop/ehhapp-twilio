@@ -1,0 +1,19 @@
+New EHHOP Voicemail from {{ from_phone }}
+
+Assigned to: {{ assign_names }}
+
+Please DO NOT reply to this email--call the patient back using the contact information within the voicemail message.
+
+Listen to the message here: {{ playback_url }}
+
+Sign in with your Mount Sinai Google Apps account to hear all your voicemails. https://twilio.ehhapp.org/voicemails
+
+Thanks, 
+EHHAPP-Twilio
+
+---
+Notice a bug? Let EHHOP Tech know
+Phone: 973.960.8144
+Admin: ryan.neff@icahn.mssm.edu
+
+

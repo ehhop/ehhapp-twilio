@@ -3,18 +3,27 @@ from ehhapp_twilio.database_helpers import *
 from ehhapp_twilio.email_helper import *
 
 from celery import Celery
-celery = Celery(app.name)
-celery.config_from_object("celeryconfig")
+
+#pass flask to celery when background tasks are run
+def make_celery(app):
+	celery = Celery(app.name)
+	celery.config_from_object("celeryconfig")
+	TaskBase = celery.Task
+	class ContextTask(TaskBase):
+		abstract = True
+		def __call__(self, *args, **kwargs):
+			with app.app_context():
+				return TaskBase.__call__(self, *args, **kwargs)
+	celery.Task = ContextTask
+	return celery
+
+#init celery
+celery = make_celery(app)
 
 @celery.task(name='tasks.async_process_message')
 def async_process_message(recording_url, intent, ani, positions, to_emails=None):
 	name = process_recording(recording_url, intent, ani, positions, to_emails=to_emails)
 	return name
-
-def set_async_message_deliver(record, remind_id):
-	deliver_time = datetime.strptime(record.time,'%Y-%m-%d %H:%M:%S.%f')
-	send_message.apply_async(args=[remind_id, record.to_phone], eta=deliver_time)	
-	return None
 
 @celery.task
 def save_secure_message(recording_url, save_name):
@@ -37,3 +46,12 @@ def deliver_callback(remind_id, from_phone):
 		from_ = twilio_number,
 	)
 	return None
+
+#==============other helpers===========
+
+def set_async_message_deliver(record, remind_id):
+	deliver_time = datetime.strptime(record.time,'%Y-%m-%d %H:%M:%S.%f')
+	send_message.apply_async(args=[remind_id, record.to_phone], eta=deliver_time)	
+	return None
+
+

@@ -72,7 +72,7 @@ class Intent(Base):
 	distributed_recipients = Column(String)
 	
 	def __repr__(self):
-		return '<Intent %r, Digit: %r>' % (self.id, self.difit)
+		return '<Intent %r, Digit: %r>' % (self.id, self.digit)
 
 	def __init__(self, digit=None, description=None, required_recipients=None, distributed_recipients=None):
 		self.digit = digit
