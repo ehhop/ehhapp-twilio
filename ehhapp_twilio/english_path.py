@@ -166,7 +166,7 @@ def take_message(intent):
 		#Please leave a message for us after the tone. Make sure to let us know what times we can call you back. We will call you back within one day.
 		resp.play("/assets/audio/nonurgent_message.mp3")
 
-	#resp.play("/assets/audio/vm_instructions.mp3")
+	resp.play("/assets/audio/vm_instructions.mp3")
 
 	# after patient leaves message, direct them to next step
 	

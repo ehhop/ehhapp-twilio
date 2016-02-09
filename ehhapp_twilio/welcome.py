@@ -27,11 +27,21 @@ def hello_ehhop():
 		record = Reminder.query.filter_by(to_phone=callerid, delivered=False).first()
 		if record != None:
 			if (record.passcode != None) and (record.message !=None):
-				return redirect(url_for('secure_message_callback', remind_id = record.id))
-	
+				return redirect(url_for('secure_message_callback', remind_id = record.id)) # RE-RECORD ME
 	resp = twilio.twiml.Response()
 	with resp.gather(numDigits=1, action="/handle_key/hello", method="POST") as g:
 		for i in range(0,3):
 			g.play("/assets/audio/welcome_greeting_ehhop.mp3")
 			g.pause(length=5)
 	return str(resp)
+
+@app.route('/sp/', methods=["GET", "POST"])
+def sp_hello_ehhop():
+        '''this is a new part of the path to repeat the beginning menu in all spanish'''
+        resp = twilio.twiml.Response()
+        with resp.gather(numDigits=1, action="/handle_key/sp/hello", method="POST") as g:
+                for i in range(0,3):
+                        g.play("/assets/audio/welcome_greeting_ehhop_sp.mp3") #NEEDS RECORDING
+                        g.pause(length=5)
+        return str(resp)
+
