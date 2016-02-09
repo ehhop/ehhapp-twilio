@@ -15,7 +15,7 @@ app.debug = True # THIS LOGS TO system, NOT email!
 mail = Mail(app)
 
 client = TwilioRestClient(twilio_AccountSID, twilio_AuthToken)
-auth_combo=HTTPBasicAuth(twilio_AccountSID, twilio_AuthToken)
+auth_combo=(twilio_AccountSID, twilio_AuthToken)
 
 from ehhapp_twilio.database import db_session
 import ehhapp_twilio.backgroundtasks

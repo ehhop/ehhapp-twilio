@@ -30,6 +30,7 @@ def process_recording(recording_url, intent, ani, requireds=None, assign=None, n
 
 	satdate = getSatDate() # get next clinic date
 	recording_name = save_file(recording_url, auth_method) # save the file
+	db = EHHOPdb(credentials)
 
 	# figure out who to send the message to
 	if assign==None:
@@ -42,7 +43,6 @@ def process_recording(recording_url, intent, ani, requireds=None, assign=None, n
 			intent = Intent.query.filter_by(digit=intent).first()
 			assigns = intent.distributed_recipients.split(',')
 			assignlist = []
-			db = EHHOPdb(credentials)
 			for a in assigns:
 				interresult = db.lookup_name_in_schedule(pos, satdate)
 				for i in interresult:
@@ -57,11 +57,13 @@ def process_recording(recording_url, intent, ani, requireds=None, assign=None, n
 	if requireds==None and not no_requireds:
 		db_requireds = Intent.query.filter_by(digit=intent).first()
 		if db_requireds != None:
-			requiredpos = db_requireds.split(',')
+			requiredpos = db_requireds.required_recipients.split(',')
 			requirelist = []
 			for r in requiredpos:
 				r = r.strip(" ")
-				requirelist.append(db.lookup_name_by_position(r)[2])
+				lookup = db.lookup_name_by_position(r)
+				if lookup != []:
+					requirelist.append(db.lookup_name_by_position(r)[2])
 			requireds = ','.join(requirelist)
 		requireds = fallback_email if requireds==None else requireds # in case something goes bad
 	if no_requireds:
@@ -73,8 +75,8 @@ def process_recording(recording_url, intent, ani, requireds=None, assign=None, n
 
 def send_email(recording_name, intent, ani, requireds, assign, app=app):
 	if app.debug==True:
-		requireds = it_emails
-		assign = it_emails
+		requireds = it_emails[0]
+		assign = it_emails[0]
 	intent = str(intent)
 	# look for configuration variables in params.conf file...
 	msg = Message(sender=from_email)
