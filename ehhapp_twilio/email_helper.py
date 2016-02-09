@@ -63,7 +63,8 @@ def process_recording(recording_url, intent, ani, requireds=None, assign=None, n
 				r = r.strip(" ")
 				lookup = db.lookup_name_by_position(r)
 				if lookup != []:
-					requirelist.append(db.lookup_name_by_position(r)[2])
+					for rr in lookup:
+						requirelist.append(rr[2])
 			requireds = ','.join(requirelist)
 		requireds = fallback_email if requireds==None else requireds # in case something goes bad
 	if no_requireds:
