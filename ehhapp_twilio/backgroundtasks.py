@@ -21,8 +21,10 @@ def make_celery(app):
 celery = make_celery(app)
 
 @celery.task(name='tasks.async_process_message')
-def async_process_message(recording_url, intent, ani, positions, to_emails=None):
-	name = process_recording(recording_url, intent, ani, positions, to_emails=to_emails)
+def async_process_message(recording_url, intent, ani, requireds=None, assign=None, no_requireds=False):
+	name = process_recording(recording_url, intent, ani, requireds=requireds, 
+							     assign=assign, 
+							     no_requireds=no_requireds)
 	return name
 
 @celery.task

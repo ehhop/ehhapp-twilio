@@ -179,16 +179,12 @@ def handle_recording(intent):
 	'''patient has finished leaving recording'''
 	resp = twilio.twiml.Response()
 	ani = request.values.get('From', 'None')
-	to_email = None
-	positions = None
-	if intent == 0:
-		to_email = request.values.get('to_email', None)
-	else:
-		positions = ','.join(intentions[intent][1])
+	to_email = request.values.get('to_email', None)
+	no_requireds = True if to_email != None else False
 	recording_url = request.values.get("RecordingUrl", None)
 
 	# process message asynchronously (e.g. download and send emails) using Celery
-	async_process_message.delay(recording_url, intent, ani, positions, to_emails=to_email)
+	async_process_message.delay(recording_url, intent, ani, assign=to_email, no_requireds=no_requireds)
 
 	###if the message was successfully sent... TODO to check
 	# Your message was sent. Thank you for contacting EHHOP. Goodbye!
