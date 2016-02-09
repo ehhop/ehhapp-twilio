@@ -10,7 +10,7 @@ app = Flask(__name__, static_folder='')
 app.config['SQLALCHEMY_DATABASE_URI'] = sqlalchemy_db
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.secret_key = flask_secret_key
-app.debug = True
+app.debug = False
 
 mail = Mail(app)
 
@@ -26,6 +26,14 @@ import ehhapp_twilio.english_path
 import ehhapp_twilio.spanish_path
 import ehhapp_twilio.ehhop_members_path
 import ehhapp_twilio.welcome
+
+import logging
+from logging.handlers import SMTPHandler
+mail_handler = SMTPHandler('localhost',
+                               'server-error@twilio.ehhapp.org',
+                              	'ryan.neff@icahn.mssm.edu', 'EHHAPP-Twilio Failed')
+mail_handler.setLevel(logging.WARNING)
+app.logger.addHandler(mail_handler)
 
 @app.teardown_appcontext
 def shutdown_session(exception=None):
