@@ -10,7 +10,7 @@ app = Flask(__name__, static_folder='')
 app.config['SQLALCHEMY_DATABASE_URI'] = sqlalchemy_db
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.secret_key = flask_secret_key
-app.debug = False
+app.debug = True # THIS LOGS TO system, NOT email!
 
 mail = Mail(app)
 
