@@ -14,6 +14,8 @@ from twilio.rest import TwilioRestClient
 
 from flask.ext.mail import Message
 
+# Everything we do when we get a new VM
+
 # user/pass to log into Twilio to retrieve files
 auth_combo=HTTPBasicAuth(twilio_AccountSID, twilio_AuthToken)
 

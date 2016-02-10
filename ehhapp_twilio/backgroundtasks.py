@@ -33,6 +33,7 @@ def save_secure_message(recording_url, save_name):
 	save_file_with_name(recording_url, auth_combo, save_name)
 	return None
 
+# Pertaining to secure message delivery example
 @celery.task
 def send_message(remind_id, to_phone):
 	'''background send a secure message at a certain time'''
