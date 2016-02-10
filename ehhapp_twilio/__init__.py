@@ -10,22 +10,23 @@ app = Flask(__name__, static_folder='')
 app.config['SQLALCHEMY_DATABASE_URI'] = sqlalchemy_db
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.secret_key = flask_secret_key
-app.debug = True # THIS LOGS TO system, NOT email!
+app.debug = True # THIS LOGS TO system when in debug, email in production (False)
 
 mail = Mail(app)
 
 client = TwilioRestClient(twilio_AccountSID, twilio_AuthToken)
 auth_combo=(twilio_AccountSID, twilio_AuthToken)
 
-from ehhapp_twilio.database import db_session
-import ehhapp_twilio.backgroundtasks
-import ehhapp_twilio.database_helpers
-import ehhapp_twilio.voicemail_helpers
-import ehhapp_twilio.email_helper
-import ehhapp_twilio.english_path
-import ehhapp_twilio.spanish_path
-import ehhapp_twilio.ehhop_members_path
-import ehhapp_twilio.welcome
+from ehhapp_twilio.database import db_session 	# to make sqlalchemy calls
+import ehhapp_twilio.backgroundtasks		# celery specific stuff
+import ehhapp_twilio.database_helpers		# google drive functions (EHHOPdb)
+import ehhapp_twilio.voicemail_helpers		# GUI for the voicemail system, logins, playing VMs
+import ehhapp_twilio.email_helper		# sending emails, processing reoordings 
+						#	after someone leaves a message
+import ehhapp_twilio.english_path		# Twilio path for english
+import ehhapp_twilio.spanish_path		# Twilio path for spanish
+import ehhapp_twilio.ehhop_members_path		# Twilio path when you press the '*' key after you call
+import ehhapp_twilio.welcome			# initial greeting
 
 import logging
 from logging.handlers import SMTPHandler
