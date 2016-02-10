@@ -33,6 +33,7 @@ def save_secure_message(recording_url, save_name):
 	save_file_with_name(recording_url, auth_combo, save_name)
 	return None
 
+# Pertaining to secure message delivery example
 @celery.task
 def send_message(remind_id, to_phone):
 	call = client.calls.create(url="https://twilio.ehhapp.org/secure_message/callback/" + str(remind_id),

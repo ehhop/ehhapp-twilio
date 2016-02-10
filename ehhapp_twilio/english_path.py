@@ -3,6 +3,7 @@ from ehhapp_twilio import *
 from ehhapp_twilio.database_helpers import *
 from ehhapp_twilio.backgroundtasks import *
 
+# How was the handle_key/hello route named?
 @app.route("/handle_key/hello", methods=["GET", "POST"])
 def handle_key_hello():
 	'''respond to initial direction'''

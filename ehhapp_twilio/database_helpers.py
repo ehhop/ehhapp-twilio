@@ -9,6 +9,9 @@ from datetime import datetime, timedelta, date, time
 
 json_key = json.load(open(google_oauth2_file))
 scope = ['https://spreadsheets.google.com/feeds']
+
+# Google stuff
+# Look up SignedJwtAssertionCredentials
 credentials = SignedJwtAssertionCredentials(json_key['client_email'], json_key['private_key'], scope)
 
 class EHHOPdb:

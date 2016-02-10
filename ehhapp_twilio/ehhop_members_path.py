@@ -5,6 +5,8 @@ from ehhapp_twilio.backgroundtasks import *
 from ehhapp_twilio.database import db_session
 from ehhapp_twilio.models import Reminder
 
+# Routes that stem from *
+
 @app.route("/auth_menu", methods=['GET','POST'])
 def auth_menu():
 	resp = twilio.twiml.Response()
