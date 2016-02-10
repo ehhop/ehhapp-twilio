@@ -96,6 +96,19 @@ def delete_reminder(remind_id):
 		db_session.commit()
 		return redirect(url_for('serve_vm_admin'))				
 
+@app.route('/assignments/delete<int:assign_id>', methods=['GET'])
+@flask_login.login_required
+def delete_assignment(assign_id):
+	record = Assignment.query.get(assign_id)
+	if record == None:
+		flash('Could not find assignment in database.')
+		return redirect(url_for('serve_assignment_admin'))
+	else:
+		flash('Assignment removed.')
+		db_session.delete(record)
+		db_session.commit()
+		return redirect(url_for('serve_assignment_admin'))				
+
 @app.route('/play_recording', methods=['GET', 'POST'])
 def play_vm_recording():
 	twilio_client_key = request.values.get('key', None)
