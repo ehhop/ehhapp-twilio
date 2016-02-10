@@ -5,8 +5,6 @@ from ehhapp_twilio.backgroundtasks import *
 from ehhapp_twilio.database import db_session
 from ehhapp_twilio.models import Reminder
 
-# Routes that stem from *
-
 @app.route("/auth_menu", methods=['GET','POST'])
 def auth_menu():
 	'''after they press * on main menu - deliver options'''
@@ -185,7 +183,7 @@ def secure_message_send(remind_id):					# confirm messsage to send
 	return str(resp)
 
 @app.route("/secure_message/callback/<int:remind_id>", methods=['GET', 'POST'])
-def secure_message_callback(remind_id):					# gets ran when patient is called
+def secure_message_callback(remind_id):					# gets run when patient is called
 	'''callback function for when we dial out to patient'''
 	resp = twilio.twiml.Response()
 

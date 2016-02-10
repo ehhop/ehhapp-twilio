@@ -5,8 +5,6 @@ import twilio.twiml
 from twilio.rest import TwilioRestClient
 from flask.ext.mail import Mail
 
-### Set it up
-
 #Flask init
 app = Flask(__name__, static_folder='')
 app.config['SQLALCHEMY_DATABASE_URI'] = sqlalchemy_db
