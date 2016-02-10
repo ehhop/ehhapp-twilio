@@ -48,13 +48,13 @@ def process_recording(recording_url, intent, ani, requireds=None, assign=None, n
 				for i in interresult:
 					email = db.lookup_email_by_name(i)
 					assignlist.append(email) if email != None else None
-			counts = [Assignment.query.filter_by(recipients=a).count() for a in assignlist]
+			counts = [Assignment.query.filter_by(recipients=a).count() for a in assignlist] # count number of people person has in workload
 			assign = assignlist[counts.index(min(counts))] # gets whoever has the lowest load (alphabetical tiebreak)
 			# save the new assignment to the database for later retrieval
 			new_assign = Assignment(from_phone=ani[-10:], recipients=assign)
 			db_session.add(new_assign)
 			db_session.commit()
-	if requireds==None and not no_requireds:
+	if requireds==None and not no_requireds:			# if no required recipients are sent and not a direct message
 		db_requireds = Intent.query.filter_by(digit=intent).first()
 		if db_requireds != None:
 			requiredpos = db_requireds.required_recipients.split(',')
@@ -67,14 +67,15 @@ def process_recording(recording_url, intent, ani, requireds=None, assign=None, n
 						requirelist.append(rr[2])
 			requireds = ','.join(requirelist)
 		requireds = fallback_email if requireds==None else requireds # in case something goes bad
-	if no_requireds:
+	if no_requireds:						# if a direct VM (dial_extension)
 		requireds = ''
-	with app.app_context():
+	with app.app_context():						# pass the Flask app to the next function (weird rendering quirk)
 		send_email(recording_name, intent, ani, requireds, assign)
-	delete_file(recording_url)
+	delete_file(recording_url)					# delete recording from Twilio
 	return recording_name
 
 def send_email(recording_name, intent, ani, requireds, assign, app=app):
+	'''send an email to the required and assigned recipients'''
 	if app.debug==True:
 		requireds = it_emails[0]
 		assign = it_emails[0]
@@ -100,34 +101,36 @@ def send_email(recording_name, intent, ani, requireds, assign, app=app):
 	return None
 
 def save_file(recording_url, auth_method):
+	'''save a VM from twilio, pick a random name'''
 	save_name = randomword(64) + ".wav" # take regular name and salt it
-	# we are now using HTTP basic auth to do the downloads
-	# step 0 - open up a FTP session with HIPAA box
+										# we are now using HTTPS basic auth to do the downloads
+										# step 0 - open up a FTP session with HIPAA box
 	session = FTP_TLS('ftp.box.com', box_username, box_password)
-	# step 1 - open a request to get the voicemail using a secure channel with Twilio
-	response = requests.get(recording_url, stream=True, auth=auth_method) # no data has been downloaded yet (just headers)
-	# step 2 - read the response object in chunks and write it to the HIPAA box directly
+										# step 1 - open a request to get the voicemail using a secure channel with Twilio
+	response = requests.get(recording_url, stream=True, auth=auth_method) 	# no data has been downloaded yet (just headers)
+										# step 2 - read the response object in chunks and write it to the HIPAA box directly
 	session.storbinary('STOR recordings/' + save_name, response.raw)
-	# step 3 - cleanup
+										# step 3 - cleanup
 	session.quit()
 	del response
 	return save_name
 
 def save_file_with_name(recording_url, auth_method, save_name):
-	# we are now using HTTP basic auth to do the downloads
-	# step 0 - open up a FTP session with HIPAA box
+	'''save a VM from twilio, specify a filename, NOT USED'''
+										# we are now using HTTP basic auth to do the downloads
+										# step 0 - open up a FTP session with HIPAA box
 	session = FTP_TLS('ftp.box.com', box_username, box_password)
-	# step 1 - open a request to get the voicemail using a secure channel with Twilio
-	response = requests.get(recording_url, stream=True, auth=auth_method) # no data has been downloaded yet (just headers)
-	# step 2 - read the response object in chunks and write it to the HIPAA box directly
+										# step 1 - open a request to get the voicemail using a secure channel with Twilio
+	response = requests.get(recording_url, stream=True, auth=auth_method) 	# no data has been downloaded yet (just headers)
+										# step 2 - read the response object in chunks and write it to the HIPAA box directly
 	session.storbinary('STOR recordings/' + save_name, response.raw)
-	# step 3 - cleanup
+										# step 3 - cleanup
 	session.quit()
 	del response
 	return save_name
 
 def delete_file(recording_url):
-	# delete the recording from Twilio - IMPORTANT
+	'''delete the recording from Twilio - IMPORTANT'''
 	client = TwilioRestClient(twilio_AccountSID, twilio_AuthToken)
 	if "/" in recording_url:
 		recording_sid = recording_url.split("/")[-1]
@@ -136,10 +139,11 @@ def delete_file(recording_url):
 	return None
 
 def randomword(length):
+	'''generate a random string of whatever length, good for filenames'''
 	return ''.join(random.choice(string.lowercase) for i in range(length))
 
 def getSatDate():
-	# get next saturday's date
+	'''get next saturday's date - duplicate function!!!'''
         time_now = datetime.now(pytz.timezone('US/Eastern'))
         day_of_week = time_now.weekday()
         addtime = None

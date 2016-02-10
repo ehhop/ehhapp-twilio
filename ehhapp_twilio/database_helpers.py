@@ -11,13 +11,13 @@ json_key = json.load(open(google_oauth2_file))
 scope = ['https://spreadsheets.google.com/feeds']
 credentials = SignedJwtAssertionCredentials(json_key['client_email'], json_key['private_key'], scope)
 
-class EHHOPdb:
+class EHHOPdb:							# our Google Drive database
 	
-	def __init__(self, credentials):
+	def __init__(self, credentials):			# get all the data, assemble it into python variables
 		self.conn = gspread.authorize(credentials)
 		self.personnel = self.getdb()
 		self.schedule = self.getschedule()
-		self.sanitize = re.compile(r'[^\d]+')
+		self.sanitize = re.compile(r'[^\d]+')		# for fixing wanky phone numbers into just digits to dial
 	
 	def __repr__(self):
 		return "<class EHHOPdb>"
@@ -46,21 +46,21 @@ class EHHOPdb:
 				return [record['Name'], '+1' + self.sanitize.sub('', record['Telephone']), record['Email']] # if we found the extension
 
 	def lookup_phone_by_name(self, name):
-		#get matching extension (O(N) time lookup...)
+		# get a phone number from a name, like from the schedule
 		for record in self.personnel:
 			if name == record['Name']:
 				return '+1' + self.sanitize.sub('', record['Telephone']) # if we found the extension
 		return None # if no return
 
 	def lookup_email_by_name(self, name):
-		#get matching extension (O(N) time lookup...)
+		# get an email from a name, like from the schedule
 		for record in self.personnel:
 			if name == record['Name']:
 				return record['Email'] # if we found the extension
 		return None # if no return
 
 	def lookup_name_in_schedule(self, person_type, lookup_date):
-		# get relevant keys
+		# get a name based on the posiiton title in the schedule
 		if (person_type == '') | (person_type==None):
 			return []
 		keys = [i for i in self.schedule[0].keys() if person_type.lower() in i.lower()]
@@ -71,26 +71,26 @@ class EHHOPdb:
 		return [] # return empty list
 	
 	def lookup_name_by_position(self, person_type):
-		# get matching person
+		# get matching person in EHHOP personnel
 		people = []
 		for record in self.personnel:
 			if person_type.lower() in record['Position'].lower():
 				people.append([record['Name'], '+1' + self.sanitize.sub('', record['Telephone']), record['Email']])
 		return people # return empty list
 
-def getOnCallPhoneNum():
+def getOnCallPhoneNum():					# get the on call phone #
 	database = EHHOPdb(credentials)
         return_num = None
         try:
-                return_names = database.lookup_name_in_schedule("On Call Medical Clinic TS", getSatDate())
+                return_names = database.lookup_name_in_schedule("On Call Medical Clinic TS", getSatDate())	# maybe we could add this to routes?
                 if return_names != []:
                         return_num = database.lookup_phone_by_name(return_names[0])
 		return return_num
         except:
-                return fallback_phone
+                return fallback_phone				# fallback if fail to find the number
 
 def getSatDate():
-        # get next saturday's date
+        # get next saturday's date for lookups in the schedule
         time_now = datetime.now(pytz.timezone('US/Eastern'))
         day_of_week = time_now.weekday()
         addtime = None

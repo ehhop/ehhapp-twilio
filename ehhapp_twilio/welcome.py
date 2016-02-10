@@ -5,7 +5,7 @@ from ehhapp_twilio.models import Reminder
 
 @app.route('/', methods=['GET', 'POST'])
 def hello_ehhop():
-	'''respond to incoming requests:'''
+	'''hello_ehhop(): respond to incoming calls'''
 	
 	#Gracias por llamar a la Clinica de EHHOP. 
 	#Para instrucciones en espanol, marque el numero 2. 
@@ -37,7 +37,7 @@ def hello_ehhop():
 
 @app.route('/sp/', methods=["GET", "POST"])
 def sp_hello_ehhop():
-        '''this is a new part of the path to repeat the beginning menu in all spanish'''
+        '''sp_hello_ehhop(): this is a new part of the path to repeat the beginning menu in all spanish'''
         resp = twilio.twiml.Response()
         with resp.gather(numDigits=1, action="/handle_key/sp/hello", method="POST") as g:
                 for i in range(0,3):

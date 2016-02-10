@@ -16,17 +16,17 @@ login_manager = flask_login.LoginManager()
 login_manager.init_app(app)
 
 @login_manager.user_loader
-def user_loader(user_id):
+def user_loader(user_id):				# used by Flask internally
 	return User.query.get(user_id)
 
 @login_manager.unauthorized_handler
-def unauthorized():
+def unauthorized():					# not logged in callback
 	return render_template('login.html', 
 				vm_client_id = vm_client_id)
 
 @app.route('/tokensignin', methods=['POST'])
-def googleOAuthTokenVerify():
-	#from https://developers.google.com/identity/sign-in/web/backend-auth
+def googleOAuthTokenVerify():				# authenticate with Google for Icahn accounts
+	'''from https://developers.google.com/identity/sign-in/web/backend-auth'''
 	token = request.values.get('idtoken', None)
 	try:
 		idinfo = gauthclient.verify_id_token(token, vm_client_id)
@@ -38,40 +38,40 @@ def googleOAuthTokenVerify():
 	except crypt.AppIdentityError:
 		# Invalid token
 		return None
-
-	#okay, now we're logged in. yay!
+							# okay, now we're logged in. yay!
 	userid = idinfo['sub']
 	useremail = idinfo['email']
 	user = User.query.get(useremail)
-	if user:
-		user.authenticated=True
+	if user:					# if user has been here before
+		user.authenticated=True			# log them in in DB
 		db_session.add(user)
 		db_session.commit()
-		flask_login.login_user(user, remember=True)
+		flask_login.login_user(user, remember=True)	# log them in in their browser
 	else:
-		if '@icahn.mssm.edu' not in useremail:
+		if '@icahn.mssm.edu' not in useremail:	# not ISMMS account
 			return 'Unauthorized e-mail address. You must be a ISMMS student with an @icahn.mssm.edu address!'
 		else:
-			user = User(email = useremail, google_token=userid)
-			user.authenticated=True
+			user = User(email = useremail, google_token=userid)	# create new user in DB
+			user.authenticated=True		# log them in in DB
 			db_session.add(user)
 			db_session.commit()
-			flask_login.login_user(user, remember=False)
-	return useremail
+			flask_login.login_user(user, remember=False)	# log them in in their browser
+	return useremail				# return logged in email to user
 
 @app.route("/logout", methods=["GET", "POST"])
 @flask_login.login_required
 def logout():
     """Logout the current user."""
     user = flask_login.current_user
-    user.authenticated = False
+    user.authenticated = False				# log out in db
     db_session.add(user)
     db_session.commit()
-    flask_login.logout_user()
+    flask_login.logout_user()				# delete browser cookie
     return "Logged out. You can close this window now."
 
 @app.route('/flashplayer', methods=['GET'])
 def serve_vm_player():
+	'''serves the play a voicemail page for a single voicemail'''
 	audio_url = request.values.get('a', None)
 	return render_template("player_twilio.html",
 				audio_url = audio_url, 
@@ -80,6 +80,7 @@ def serve_vm_player():
 @app.route('/reminders', methods=['GET'])
 @flask_login.login_required
 def serve_vm_admin():
+	'''GUI: this actually serves an index of the currently scheduled secure messages going out'''
 	reminders = query_to_dict(Reminder.query.all())
 	return render_template("voicemails.html", 
 				data = reminders)
@@ -87,6 +88,7 @@ def serve_vm_admin():
 @app.route('/reminders/<int:remind_id>/delete', methods=['GET'])
 @flask_login.login_required
 def delete_reminder(remind_id):
+	'''GUI: delete a secure message from the DB'''
 	record = Reminder.query.get(remind_id)
 	if record == None:
 		flash('Could not find reminder in database.')
@@ -99,6 +101,7 @@ def delete_reminder(remind_id):
 @app.route('/assignments/delete<int:assign_id>', methods=['GET'])
 @flask_login.login_required
 def delete_assignment(assign_id):
+	'''GUI: delete an assignment from the DB'''
 	record = Assignment.query.get(assign_id)
 	if record == None:
 		flash('Could not find assignment in database.')
@@ -111,10 +114,12 @@ def delete_assignment(assign_id):
 
 @app.route('/play_recording', methods=['GET', 'POST'])
 def play_vm_recording():
-	twilio_client_key = request.values.get('key', None)
+	'''serve the voicemail or secure message for playback'''
+	twilio_client_key = request.values.get('key', None)		# used when playing back messages over phone
 	if twilio_server_key != twilio_client_key:
-		if not flask_login.current_user.is_authenticated:
+		if not flask_login.current_user.is_authenticated:	# if accessing VM through GUI
 			return app.login_manager.unauthorized()
+
 	''' plays a voicemail recording from the Box server'''
 	filename = request.values.get('filename', None)
 	# check that filename attribute was set, else return None
@@ -125,25 +130,26 @@ def play_vm_recording():
 	safe_char = re.compile(r'[^\w.]+') # only alphanumeric and periods
 	filename = safe_char.sub('', filename)
 	
-	def get_file(filename):
+	def get_file(filename):						# how do we 'stream' the file from Box to browser? using a callback!
 		# get file
-		class VMFile:
+		class VMFile:						# this will store the VM message in memory instead of in a file
   			def __init__(self):
     				self.data = ""
   			def __call__(self,s):
      				self.data += s
 		v = VMFile()
-		session = FTP_TLS('ftp.box.com', box_username, box_password)
-		session.retrbinary('RETR recordings/' + filename, v)
-		session.close()
-		return v.data
+		session = FTP_TLS('ftp.box.com', box_username, box_password)	# open Box
+		session.retrbinary('RETR recordings/' + filename, v)	# add each chunk of data to memory from Box
+		session.close()						# close Box
+		return v.data						# return the data put back together again to be sent to browser
 	
 	# serve file
-	return Response(get_file(filename), mimetype='audio/wav')
+	return Response(get_file(filename), mimetype='audio/wav')	# return data to browser as a .wav file
 
 @app.route('/intents', methods=['GET'])
 @flask_login.login_required
 def serve_intent_admin():
+	'''GUI: serve the intents/routing page'''
         intents = query_to_dict(Intent.query.all())
         return render_template("intents.html",
                                 data = intents)
@@ -151,6 +157,7 @@ def serve_intent_admin():
 @app.route('/assignments', methods=['GET'])
 @flask_login.login_required
 def serve_assignment_admin():
+	'''GUI: serve the phone number assignments page'''
         assignments = query_to_dict(Assignment.query.all())
         return render_template("assignments.html",
                                 data = assignments)
@@ -158,6 +165,7 @@ def serve_assignment_admin():
 @app.route('/intents/edit', methods=['GET', 'POST'])
 @flask_login.login_required
 def add_intent():
+	'''GUI: add an intent/route to the DB'''
 	form = IntentForm(request.form)
 	if request.method == 'POST' and form.validate():
 		intent = Intent(form.digit.data, form.description.data, form.required_recipients.data,
@@ -171,6 +179,7 @@ def add_intent():
 @app.route('/intents/edit<int:intent_id>', methods=['GET', 'POST'])
 @flask_login.login_required
 def edit_intent(intent_id):
+	'''GUI: edit an intent in the DB'''
 	intent = Intent.query.get(intent_id)
 	formout = IntentForm(obj=intent)
 	form = IntentForm(request.form)
@@ -188,6 +197,7 @@ def edit_intent(intent_id):
 @app.route('/assignments/edit', methods=['GET', 'POST'])
 @flask_login.login_required
 def add_assignment():
+	'''GUI: add an assignment to the DB'''
 	form = AssignmentForm(request.form)
 	if request.method == 'POST' and form.validate():
 		assignment = Assignment(form.from_phone.data, form.recipients.data)
@@ -200,6 +210,7 @@ def add_assignment():
 @app.route('/assignments/edit<int:assign_id>', methods=['GET', 'POST'])
 @flask_login.login_required
 def edit_assignment(assign_id):
+	'''GUI: edit an assignment in the DB'''
 	assign = Assignment.query.get(assign_id)
 	formout = AssignmentForm(obj=assign)
 	form = AssignmentForm(request.form)
@@ -215,6 +226,7 @@ def edit_assignment(assign_id):
 @app.route('/intents/test<int:intent_id>', methods=['GET', 'POST'])
 @flask_login.login_required
 def test_intent(intent_id):
+	'''GUI: test the routings from the intents to see which people in EHHOP/schedule VMs/calls will go to'''
 	intent = Intent.query.get(intent_id)
 	if intent == None:
 		flash('ERROR: Intent not in DB.')
@@ -240,5 +252,6 @@ def test_intent(intent_id):
 		flash(pos + ": " + str(assignresult[pos]))
 	return redirect(url_for('serve_intent_admin'))
 
+# END
 		
 

@@ -7,6 +7,7 @@ from ehhapp_twilio.models import Reminder
 
 @app.route("/auth_menu", methods=['GET','POST'])
 def auth_menu():
+	'''after they press * on main menu - deliver options'''
 	resp = twilio.twiml.Response()
 	passcode=request.values.get("Digits", None)
 	
@@ -26,28 +27,29 @@ def auth_menu():
 
 @app.route("/auth_selection", methods=['GET','POST'])
 def auth_selection():
+	'''made a selection from auth menu function, now handle it'''
 	resp = twilio.twiml.Response()
 	digit = request.values.get("Digits", None)
 	
-	if digit == '1':
+	if digit == '1':						# pacific interpreters
 		resp.dial('+18002641552', callerId='+18622425952')
 		return str(resp)
-	elif digit == '2':
+	elif digit == '2':						# use EHHOP caller ID
 		with resp.gather(numDigits=10, action='/caller_id_dial', method='POST') as g:
 			g.play('/assets/audio/entertodigits.mp3')
 		return str(resp)
-	elif digit == '3':
+	elif digit == '3':						# leave secure message
 		with resp.gather(numDigits=10, action='/secure_message/setnum/', method='POST') as g:
 			g.play('/assets/audio/entertendigits-vm.mp3')
 		return str(resp)
-	else:
+	else:								# incorrect key
 		resp.play('/assets/audio/incorrectkey.mp3')
 		with resp.gather(numDigits=1, action='/auth_selection', method='POST') as g:
 			g.play('/assets/audio/dial-vmremindermenu.mp3')
                 return str(resp)
 
 @app.route("/secure_message/setnum/", methods=['GET', 'POST'])
-def secure_message_setnum():
+def secure_message_setnum():						# start secure message function
 	''' creates a row in the database with a secure message ID and pt phone num
 	    still need to set the following:
 		reminder time (now, one day from now, or specify date)
@@ -74,7 +76,7 @@ def secure_message_setnum():
 	return str(resp)
 
 @app.route("/secure_message/setpass/<int:remind_id>", methods=['GET', 'POST'])
-def secure_message_setpass(remind_id):
+def secure_message_setpass(remind_id):					# second step in secure message
 	''' sets the passcode from the last step and asks for a reminder time '''
 	resp = twilio.twiml.Response()
 	passcode=request.values.get("Digits", None)
@@ -99,7 +101,7 @@ def secure_message_setpass(remind_id):
 	return str(resp)
 
 @app.route("/secure_message/settime/<int:remind_id>", methods=['GET', 'POST'])
-def secure_message_settime(remind_id):
+def secure_message_settime(remind_id):					# third step in secure message
 	''' sets the reminder time and asks for the message '''
 	resp = twilio.twiml.Response()
 	choice=request.values.get("Digits", None)
@@ -133,7 +135,8 @@ def secure_message_settime(remind_id):
 	return str(resp)
 
 @app.route("/secure_message/setmessage/<int:remind_id>", methods=['GET', 'POST'])
-def secure_message_setmessage(remind_id):
+def secure_message_setmessage(remind_id):				# fourth step in secure message - record the message
+	'''record secure message'''
 	resp = twilio.twiml.Response()
 	recording_url = request.values.get("RecordingUrl", None)
 
@@ -161,7 +164,8 @@ def secure_message_setmessage(remind_id):
 	return str(resp)
 
 @app.route("/secure_message/send/<int:remind_id>", methods=['GET', 'POST'])
-def secure_message_send(remind_id):
+def secure_message_send(remind_id):					# confirm messsage to send
+	'''after leaving VM, confirm to send it'''
 	resp = twilio.twiml.Response()
 	choice=request.values.get("Digits", None)
 
@@ -179,7 +183,8 @@ def secure_message_send(remind_id):
 	return str(resp)
 
 @app.route("/secure_message/callback/<int:remind_id>", methods=['GET', 'POST'])
-def secure_message_callback(remind_id):
+def secure_message_callback(remind_id):					# gets ran when patient is called
+	'''callback function for when we dial out to patient'''
 	resp = twilio.twiml.Response()
 
 	try:
@@ -197,6 +202,7 @@ def secure_message_callback(remind_id):
 
 @app.route("/secure_message/passauth/<int:remind_id>", methods=['GET', 'POST'])
 def secure_message_passauth(remind_id):
+	'''after we call the patient, ask for passcode'''
 	resp = twilio.twiml.Response()
 	choice=request.values.get("Digits", None)
 
@@ -213,6 +219,7 @@ def secure_message_passauth(remind_id):
 
 @app.route("/secure_message/playback/<int:remind_id>", methods=['GET', 'POST'])
 def secure_message_playback(remind_id):
+	'''play the message for the patient'''
 	resp = twilio.twiml.Response()
 	passcode=request.values.get("Digits", None)
 
@@ -238,6 +245,7 @@ def secure_message_playback(remind_id):
 
 @app.route("/secure_message/delivered/<int:remind_id>", methods=["GET", "POST"])
 def secure_message_delivered(remind_id):
+	'''call the originial person who made secure message and tell them it was delivered'''
 	resp = twilio.twiml.Response()
 
 	# find the record in the DB that corresponds to this call
@@ -252,10 +260,8 @@ def secure_message_delivered(remind_id):
 @app.route("/caller_id_dial", methods=['GET','POST'])
 def caller_id_dial():
 	''' dials out from the EHHOP phone number'''
-
 	resp = twilio.twiml.Response()
 	number=request.values.get("Digits", None)
-
 	resp.say("Connecting you with your destination.", voice='alice')
 	resp.dial("+1" + number, callerId='+18622425952')
 	resp.say("I'm sorry, but your call either failed or may have been cut short.", voice='alice', language='en-US')

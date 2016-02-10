@@ -3,6 +3,9 @@ from ehhapp_twilio.database import Base
 from ehhapp_twilio.config import *
 from sqlalchemy_utils import EncryptedType
 
+# this file - definds sqlalchemy tables in the database, 
+# also makes them objects for getting stuff from the DB
+
 class User(Base):
     """A user capable of listening to voicemails"""
     __tablename__ = 'user'
