@@ -3,3 +3,4 @@ venv
 *.conf
 *.json
 config.py
+*.swp
