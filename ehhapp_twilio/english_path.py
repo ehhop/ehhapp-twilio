@@ -65,20 +65,20 @@ def handle_key_hello():
 def clinic_open_menu():
 	'''respond to digit press when the clinic is open'''
 	resp = twilio.twiml.Response()
-	digit = request.values.get('Digits', None)				# get keypress
+	intent = request.values.get('Digits', None)				# get keypress
 
 	oncall_current_phone = getOnCallPhoneNum()				# get the phone # of the on call - fallback if something wrong
 
-	if digit == '1':  							# appointment today
+	if intent == '1':  							# appointment today
 		resp.play("/assets/audio/xfer_call.mp3")			# now transferring to oncall
 		resp.dial(oncall_current_phone)					# dial current CM
 		resp.play('/assets/audio/allbusy_trylater.mp3')			# if call fails (not picked up)
 		with resp.gather(numDigits=1, action="/handle_key/clinic_open_menu", method="POST") as g: 	# replay open menu after failure
 				g.play("/assets/audio/clinic_open_menu.mp3")
 				g.pause(length=5)
-	elif digit in ['2', '3', '4','5','6','7']:				# patient doesnt have appt today (everything else)
-		return redirect('/take_message/' + digit)			# take a message
-	else:									# accidential key press
+	elif intent in ['2', '3', '4','5','6','7']:				# patient doesnt have appt today (everything else)
+		return redirect('/take_message/' + intent)			# take a message
+	else:									# accidental key press
 		resp.play('/assets/audio/incorrectkey.mp3')
 		resp.pause(length=3)
 		with resp.gather(numDigits=1, action="/handle_key/clinic_open_menu", method="POST") as g:	# replay open menu after accidential keypress
