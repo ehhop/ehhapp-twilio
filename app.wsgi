@@ -9,5 +9,5 @@ sys.path.append(PROJECT_DIR + '/venv')
 activate_this = os.path.expanduser('/var/wsgiapps/ehhapp_twilio/venv/bin/activate_this.py')
 execfile(activate_this, dict(__file__=activate_this))
 
-
+# make our Flask app available for mod_wsgi
 from ehhapp_twilio import app as application
