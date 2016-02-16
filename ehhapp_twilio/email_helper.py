@@ -1,4 +1,5 @@
 #!/usr/bin/python
+import sys
 from ehhapp_twilio import *
 from ehhapp_twilio.database_helpers import *
 from ehhapp_twilio.config import *
@@ -42,16 +43,23 @@ def process_recording(recording_url, intent, ani, requireds=None, assign=None, n
 			assign = [item for sublist in assign for item in sublist] # flatten array of arrays
 			assign = ','.join(assign)
 		else: # no one has the default assignment for that phone number
-			intent = Intent.query.filter_by(digit=intent).first()
-			assigns = intent.distributed_recipients.split(',')
+			intents = Intent.query.filter_by(digit=intent).first()
+			sys.stderr.write(str(intents))
+			assigns = intents.distributed_recipients.split(',')
+			sys.stderr.write(str(assigns))
 			assignlist = []
 			for a in assigns:
-				interresult = db.lookup_name_in_schedule(pos, satdate)
+				sys.stderr.write(str(a) + str(satdate))
+				interresult = db.lookup_name_in_schedule(a, satdate)
+				sys.stderr.write(str(interresult))
 				for i in interresult:
 					email = db.lookup_email_by_name(i)
+					sys.stderr.write(str(email))
 					assignlist.append(email) if email != None else None
+			sys.stderr.write(str(assignlist))
 			counts = [Assignment.query.filter_by(recipients=a).count() for a in assignlist] # count number of people person has in workload
-			assign = assignlist[counts.index(min(counts))] # gets whoever has the lowest load (alphabetical tiebreak)
+			assign = assignlist[counts.index(min(counts))] if assignlist != [] else it_emails[0]
+				# gets whoever has the lowest load (alphabetical tiebreak)
 			# save the new assignment to the database for later retrieval
 			new_assign = Assignment(from_phone=ani[-10:], recipients=assign)
 			db_session.add(new_assign)
@@ -73,7 +81,7 @@ def process_recording(recording_url, intent, ani, requireds=None, assign=None, n
 		requireds = ''
 	with app.app_context():						# pass the Flask app to the next function (weird rendering quirk)
 		send_email(recording_name, intent, ani, requireds, assign)
-	delete_file(recording_url)					# delete recording from Twilio
+	#delete_file(recording_url)					# delete recording from Twilio
 	return recording_name
 
 def send_email(recording_name, intent, ani, requireds, assign, app=app):
@@ -153,7 +161,7 @@ def getSatDate():
                 addtime=timedelta(6)
         else:
                 addtime=timedelta(5-day_of_week)
-        satdate = (time_now+addtime).strftime('%m/%d/%Y')
+        satdate = (time_now+addtime).strftime('%-m/%-d/%Y')
 	return satdate
 
 
