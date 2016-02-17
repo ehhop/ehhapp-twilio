@@ -2,7 +2,7 @@
 from ehhapp_twilio import *
 from ehhapp_twilio.database_helpers import *
 from ehhapp_twilio.database import db_session, query_to_dict
-from ehhapp_twilio.models import User, Reminder, Intent, Assignment
+from ehhapp_twilio.models import *
 from ehhapp_twilio.forms import *
 
 import flask.ext.login as flask_login
@@ -10,6 +10,9 @@ from oauth2client import client as gauthclient
 from oauth2client import crypt
 from ftplib import FTP_TLS
 from flask import flash
+
+import pytz
+from datetime import datetime, timedelta
 
 #logins
 login_manager = flask_login.LoginManager()
@@ -251,6 +254,66 @@ def test_intent(intent_id):
 			assignresult[pos].append([i, phone])
 		flash(pos + ": " + str(assignresult[pos]))
 	return redirect(url_for('serve_intent_admin'))
+
+@app.route('/calls/callback', methods=['GET', 'POST'])
+def add_call():
+	'''add a call record to the DB via Twilio Status Callback'''
+	twilio_client_key = request.values.get('key', None)		# used to auth requests coming from Twilio
+	if twilio_server_key != twilio_client_key:
+		if not flask_login.current_user.is_authenticated:	# block unwanted people from adding records
+			return app.login_manager.unauthorized()
+
+	call_sid = request.values.get('CallSid', None)	
+	from_phone = request.values.get('From', None)
+	to_phone = request.values.get('To', None)
+	duration = request.values.get('CallDuration', None)
+	direction = request.values.get('Direction', None)
+	status = request.values.get('CallStatus', None)
+
+	time_now = datetime.now(pytz.timezone('US/Eastern'))
+	subtime=timedelta(seconds=int(duration)) if duration != None else timedelta(seconds=5)
+	starttime = (time_now-subtime).strftime('%-m/%-d/%Y %H:%M:%S')
+
+	call = Call(call_sid = call_sid,
+		    from_phone = from_phone,
+		    to_phone = to_phone,
+		    time = starttime,
+		    duration = duration,
+	            direction = direction,
+		    status = status)
+
+	# commit record to DB
+	db_session.add(call)
+	db_session.commit()	
+	
+	return "Call record added successfully."
+
+@app.route('/calls', methods=['GET'])
+@flask_login.login_required
+def serve_call_admin():
+	'''GUI: serve the call log page'''
+	# TODO: need to add pagination to this!!!
+        calls = query_to_dict(Call.query.all())
+        return render_template("calls.html",
+                                data = calls)
+
+
+@app.route('/calls/delete<int:call_id>', methods=['GET'])
+@flask_login.login_required
+def delete_call(call_id):
+	'''GUI: delete a call record from the DB'''
+	if app.debug == False:
+		return "Delete not allowed in production.", 301
+	record = Call.query.get(call_id)
+	if record == None:
+		flash('Could not find call record in database.')
+		return redirect(url_for('serve_call_admin'))
+	else:
+		flash('Call record removed.')
+		db_session.delete(record)
+		db_session.commit()
+		return redirect(url_for('serve_call_admin'))				
+
 
 # END
 		

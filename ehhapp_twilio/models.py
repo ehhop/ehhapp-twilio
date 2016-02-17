@@ -52,18 +52,29 @@ class Reminder(Base):
 class Call(Base):
 	"""A call coming in and any associated voicemail messages."""
 	__tablename__ = 'call'
-
-	call_sid = Column(String, primary_key=True)
+	
+	id = Column(Integer, primary_key=True)
+	call_sid = Column(String)
 	from_phone = Column(EncryptedType(String, flask_secret_key))
+	to_phone = Column(EncryptedType(String, flask_secret_key))
 	time = Column(EncryptedType(String, flask_secret_key))
-	message = Column(EncryptedType(String, flask_secret_key))
-	intent = Column(EncryptedType(Integer, flask_secret_key))
-	assigned_to = Column(EncryptedType(String, flask_secret_key))
-	spanish = Column(EncryptedType(Boolean, flask_secret_key), default=False)
+	duration = Column(EncryptedType(String, flask_secret_key))
+	direction = Column(EncryptedType(String, flask_secret_key))
+	status = Column(EncryptedType(String, flask_secret_key))
 	actions = Column(EncryptedType(String, flask_secret_key))
 
 	def __repr__(self):
-		return '<Call %r, From: %r, Time: %r, Message: %r>' % (self.id, self.from_phone, self.time, self.message)
+		return '<Call %r, From: %r, Time: %r, Length: %r>' % (self.id, self.from_phone, self.time, self.duration)
+
+	def __init__(self, call_sid=None, from_phone=None, to_phone = to_phone, time=None, duration=None, direction=None, status=None):
+		self.call_sid = call_sid
+		self.from_phone = from_phone
+		self.to_phone = to_phone
+		self.time = time
+		self.duration = duration
+		self.direction = direction
+		self.status = status
+
 
 class Intent(Base):
 	__tablename__ = 'intent'

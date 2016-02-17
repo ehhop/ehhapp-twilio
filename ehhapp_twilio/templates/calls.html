@@ -1,0 +1,40 @@
+{% extends "layout.html" %}
+{% block body %}
+	    <div class="page-header">
+		    <h1>Call Log</h1>
+	    </div>
+	    <table class="table table-hover">
+		<thead>
+			<tr>
+			<th> # </th>
+			<th> Direction </th>
+			<th> From </th>
+			<th> To </th>
+			<th> Time </th>
+			<th> Duration (sec.) </th>
+			<th> Status </th>
+			</tr>
+		</thead>
+		<tbody>
+		{% for i in range(0,data['id']|length) %}
+		<tr>
+			<th scope="row">{{ data['id'][i] }}
+			<td> {{ data['direction'][i] }}</td>
+			<td> {{ data['from_phone'][i] }}</td>
+			<td> {{ data['to_phone'][i] }}</td>
+			<td> {{ data['time'][i] }}</td>
+			<td> {{ data['duration'][i] }}</td>
+			<td> {{ data['status'][i] }}</td>
+			<td> 
+			<a href="https://twilio.ehhapp.org/calls/delete{{ data['id'][i] }}">Delete</a>
+				</td>
+		</tr>
+		{% endfor %}			
+		</tbody>
+	    </table>
+	    {% if data['id']|length == 0 %}
+	    <div class="alert alert-error">No call records in DB.</div>
+	    {% endif %}
+	    </div>
+    </div><!-- /.container -->
+{% endblock %}
