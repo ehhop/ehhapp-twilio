@@ -12,8 +12,6 @@ Thanks,
 EHHAPP-Twilio
 
 ---
-Notice a bug? Let EHHOP Tech know
-Phone: 973.960.8144
-Admin: ryan.neff@icahn.mssm.edu
-
+Notice a bug or want a new feature? Let EHHOP Tech know
+EHHOP Tech: https://ehhop.slack.com
 
