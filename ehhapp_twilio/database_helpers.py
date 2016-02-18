@@ -3,20 +3,14 @@ from ehhapp_twilio import *
 from ehhapp_twilio.config import *
 
 import json, re, os, pytz
-import gspread
-from oauth2client.client import SignedJwtAssertionCredentials
 from datetime import datetime, timedelta, date, time
 
-json_key = json.load(open(google_oauth2_file))
-scope = ['https://spreadsheets.google.com/feeds']
-
-# Google stuff
-credentials = SignedJwtAssertionCredentials(json_key['client_email'], json_key['private_key'], scope)
+credentials = {"names": names_filename, "schedule": schedule_filename}
 
 class EHHOPdb:							# our Google Drive database
 	
 	def __init__(self, credentials):			# get all the data, assemble it into python variables
-		self.conn = gspread.authorize(credentials)
+		self.conn = credentials
 		self.personnel = self.getdb()
 		self.schedule = self.getschedule()
 		self.sanitize = re.compile(r'[^\d]+')		# for fixing wanky phone numbers into just digits to dial
@@ -26,18 +20,16 @@ class EHHOPdb:							# our Google Drive database
 		
 	def getdb(self):
 		# download phone records
-		sh = self.conn.open_by_key(amion_spreadsheet_id)
-		ws = sh.worksheet(amion_worksheet_name)
-		records = ws.get_all_records()
+		filen = self.conn["names"]
+		records = json.load(open(filen))
 		#remove header lines or those deactivated by '#'
 		records = [i for i in records if i['Name'][0] != "#"]
 		return records
 
 	def getschedule(self):
 		# download schedule
-		sh = self.conn.open_by_key(amion_spreadsheet_id)
-		ws = sh.worksheet(amion_worksheet_schedule) 
-		records = ws.get_all_records(head=4) #4th line is header
+		filen = self.conn["schedule"]
+		records = json.load(open(filen))
 		return records
 
 	def lookup_phone_by_extension(self, ext):		

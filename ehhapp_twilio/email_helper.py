@@ -89,8 +89,8 @@ def process_recording(recording_url, intent, ani, requireds=None, assign=None, n
 def send_email(recording_name, intent, ani, requireds, assign, app=app):
 	'''send an email to the required and assigned recipients'''
 	if app.debug==True:
-		requireds = it_emails[0]
-		assign = it_emails[0]
+		requireds = ','.join(it_emails)
+		assign = ','.join(it_emails)
 	intent = str(intent)
 	# look for configuration variables in params.conf file...
 	msg = Message(sender=from_email)

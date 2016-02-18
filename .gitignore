@@ -3,4 +3,7 @@ venv
 *.conf
 *.json
 config.py
+celeryconfig.py
 *.swp
+*.tsv
+*.db
