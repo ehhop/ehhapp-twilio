@@ -81,7 +81,7 @@ class HelloTest(unittest.TestCase):
 
     def test_secure_setnum(self):
 	response = self.app.get('/secure_message/setnum/?Digits=1234567890&From=9739608144')
-	assert response.status_code in [200,302]
+	assert response.status_code == 403
 
 if __name__ == '__main__':
 	unittest.main()

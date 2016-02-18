@@ -59,9 +59,13 @@ def secure_message_setnum():						# start secure message function
 		spanish?
 		passcode
 	'''
+	if request.values.get('AccountSid', None) != twilio_AccountSID:
+		return "Not Authorized", 403 	#requests must come from Twilio
+
 	resp = twilio.twiml.Response()
 	number=request.values.get("Digits", None)
 	from_phone=request.values.get("From", None)
+	
 	
 	# add phone number to reminders, move to next step
 	reminder = Reminder(to_phone=number, from_phone=from_phone)
@@ -78,6 +82,10 @@ def secure_message_setnum():						# start secure message function
 @app.route("/secure_message/setpass/<int:remind_id>", methods=['GET', 'POST'])
 def secure_message_setpass(remind_id):					# second step in secure message
 	''' sets the passcode from the last step and asks for a reminder time '''
+
+	if request.values.get('AccountSid', None) != twilio_AccountSID:
+		return "Not Authorized", 403 	#requests must come from Twilio
+
 	resp = twilio.twiml.Response()
 	passcode=request.values.get("Digits", None)
 
@@ -103,6 +111,10 @@ def secure_message_setpass(remind_id):					# second step in secure message
 @app.route("/secure_message/settime/<int:remind_id>", methods=['GET', 'POST'])
 def secure_message_settime(remind_id):					# third step in secure message
 	''' sets the reminder time and asks for the message '''
+
+	if request.values.get('AccountSid', None) != twilio_AccountSID:
+		return "Not Authorized", 403 	#requests must come from Twilio
+
 	resp = twilio.twiml.Response()
 	choice=request.values.get("Digits", None)
 
@@ -137,6 +149,10 @@ def secure_message_settime(remind_id):					# third step in secure message
 @app.route("/secure_message/setmessage/<int:remind_id>", methods=['GET', 'POST'])
 def secure_message_setmessage(remind_id):				# fourth step in secure message - record the message
 	'''record secure message'''
+
+	if request.values.get('AccountSid', None) != twilio_AccountSID:
+		return "Not Authorized", 403 	#requests must come from Twilio
+
 	resp = twilio.twiml.Response()
 	recording_url = request.values.get("RecordingUrl", None)
 
@@ -166,6 +182,10 @@ def secure_message_setmessage(remind_id):				# fourth step in secure message - r
 @app.route("/secure_message/send/<int:remind_id>", methods=['GET', 'POST'])
 def secure_message_send(remind_id):					# confirm messsage to send
 	'''after leaving VM, confirm to send it'''
+
+	if request.values.get('AccountSid', None) != twilio_AccountSID:
+		return "Not Authorized", 403 	#requests must come from Twilio
+
 	resp = twilio.twiml.Response()
 	choice=request.values.get("Digits", None)
 
@@ -185,6 +205,10 @@ def secure_message_send(remind_id):					# confirm messsage to send
 @app.route("/secure_message/callback/<int:remind_id>", methods=['GET', 'POST'])
 def secure_message_callback(remind_id):					# gets run when patient is called
 	'''callback function for when we dial out to patient'''
+
+	if request.values.get('AccountSid', None) != twilio_AccountSID:
+		return "Not Authorized", 403 	#requests must come from Twilio
+
 	resp = twilio.twiml.Response()
 
 	try:
@@ -203,6 +227,10 @@ def secure_message_callback(remind_id):					# gets run when patient is called
 @app.route("/secure_message/passauth/<int:remind_id>", methods=['GET', 'POST'])
 def secure_message_passauth(remind_id):
 	'''after we call the patient, ask for passcode'''
+
+	if request.values.get('AccountSid', None) != twilio_AccountSID:
+		return "Not Authorized", 403 	#requests must come from Twilio
+
 	resp = twilio.twiml.Response()
 	choice=request.values.get("Digits", None)
 
@@ -220,6 +248,10 @@ def secure_message_passauth(remind_id):
 @app.route("/secure_message/playback/<int:remind_id>", methods=['GET', 'POST'])
 def secure_message_playback(remind_id):
 	'''play the message for the patient'''
+
+	if request.values.get('AccountSid', None) != twilio_AccountSID:
+		return "Not Authorized", 403 	#requests must come from Twilio
+
 	resp = twilio.twiml.Response()
 	passcode=request.values.get("Digits", None)
 
@@ -246,6 +278,10 @@ def secure_message_playback(remind_id):
 @app.route("/secure_message/delivered/<int:remind_id>", methods=["GET", "POST"])
 def secure_message_delivered(remind_id):
 	'''call the originial person who made secure message and tell them it was delivered'''
+
+	if request.values.get('AccountSid', None) != twilio_AccountSID:
+		return "Not Authorized", 403 	#requests must come from Twilio
+
 	resp = twilio.twiml.Response()
 
 	# find the record in the DB that corresponds to this call
@@ -260,6 +296,7 @@ def secure_message_delivered(remind_id):
 @app.route("/caller_id_dial", methods=['GET','POST'])
 def caller_id_dial():
 	''' dials out from the EHHOP phone number'''
+
 	resp = twilio.twiml.Response()
 	number=request.values.get("Digits", None)
 	resp.say("Connecting you with your destination.", voice='alice')
