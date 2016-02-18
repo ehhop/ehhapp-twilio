@@ -32,9 +32,8 @@
   </head>
 
   <body>
-
-    <nav class="navbar navbar-inverse navbar-fixed-top">
-      <div class="container">
+	  <nav class="navbar navbar-inverse navbar-static-top" style="position:absolute;top:0%;width:100%">
+	  <div class="container">
         <div class="navbar-header">
           <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
             <span class="sr-only">Toggle navigation</span>
@@ -53,11 +52,12 @@
 		    <li><a href="/logout">Log out</a></li>
 	    </ul>
 	    </li>
-    	</ul>
+    </ul>
+    	</div>
         </div><!--/.nav-collapse -->
       </div>
     </nav>
-    <div class="container">
+    <div class="container" style="overflow:auto;">
 	{% with messages = get_flashed_messages() %}
 	  {% if messages %}
 		<div class="alert alert-info" role="alert"><ul>
@@ -69,7 +69,7 @@
 	{% endwith %}
 	
 	{% block body %}{% endblock %}
-
+    </div>
     <!-- Bootstrap core JavaScript
     ================================================== -->
     <!-- Placed at the end of the document so the pages load faster -->

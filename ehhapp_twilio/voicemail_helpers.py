@@ -159,7 +159,7 @@ def serve_vm_admin():
 	# TODO: need to add pagination to this!!!
         voicemails = query_to_dict(Voicemail.query.all())
 	for i in range(0,len(voicemails['id'])):
-		intent = Intent.query.get(voicemails['intent'][i])
+		intent = Intent.query.filter_by(digit=voicemails['intent'][i]).first()
 		voicemails['intent'][i] = intent.description if intent != None else None
 		voicemails['message'][i] = recordings_base + voicemails['message'][i] if voicemails['message'][i] != None else None
         return render_template("voicemails.html",
