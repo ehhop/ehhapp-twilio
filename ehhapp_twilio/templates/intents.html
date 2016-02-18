@@ -1,4 +1,11 @@
 {% extends "layout.html" %}
+{% block navbar %}
+<li class="inactive"><a href="/calls">Call Log</a></li>
+<li class="inactive"><a href="/voicemails">Voicemails</a></li>
+<li class="active"><a href="/intents">Routing</a></li>
+<li class="inactive"><a href="/assignments">Assignments</a></li>
+<li class="inactive"><a href="/reminders">Messages</a></li>
+{% endblock %}
 {% block body %}
 	    <div class="page-header">
 		    <h1>Intents</h1>

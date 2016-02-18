@@ -20,6 +20,10 @@ def hello_ehhop():
 	#East Harlem Health Outreach Partnership of the Icahn School 
 	#of Medicine at Mount Sinai. 
 
+	# check if we're a EHHOP volunteer and not Twilio
+	if request.values.get('AccountSid', None) != twilio_AccountSID:
+		return redirect('https://twilio.ehhapp.org/calls')
+
 	# check if patient has a secure message waiting - if so redirect
 	callerid = request.values.get('From', None)
 	if callerid != None:

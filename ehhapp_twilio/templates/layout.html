@@ -46,11 +46,7 @@
         </div>
         <div id="navbar" class="navbar-collapse collapse">
           <ul class="nav navbar-nav">
-			<li class="active"><a href="/calls">Call Log</a></li>
-			<li class="active"><a href="/voicemails">Voicemails</a></li>
-			<li class="active"><a href="/intents">Routing</a></li>
-			<li class="active"><a href="/assignments">Assignments</a></li>
-          		<li class="active"><a href="/reminders">Messages</a></li>
+			{% block navbar %} {% endblock %}
 	    <li class="dropdown">
 	    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">{{ current_user.email }}<span class="caret"></span></a>
 	    <ul class="dropdown-menu">
