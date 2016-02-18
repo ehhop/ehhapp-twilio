@@ -1,17 +1,17 @@
 {% extends "layout.html" %}
 {% block body %}
-	    <div class="page-header">
-		    <h1>Voicemails</h1>
+		<div class="page-header">
+		    <h1>Scheduled Reminders</h1>
 	    </div>
 	    <table class="table table-hover">
 		<thead>
 			<tr>
 			<th> # </th>
-			<th> Intent </th>
+			<th> To </th>
 			<th> From </th>
-			<th> Time </th>
-			<th> Message </th>
-			<th> Sent to </th>
+			<th> Status </th>
+			<th> Scheduled Delivery </th>
+			<th> Recording </th>
 			<th> Actions </th>
 			</tr>
 		</thead>
@@ -19,20 +19,18 @@
 		{% for i in range(0,data['id']|length) %}
 		<tr>
 			<th scope="row">{{ data['id'][i] }}</th>
-			<td> {{ data['intent'][i] }}</td>
+			<td> {{ data['to_phone'][i] }}</td>
 			<td> {{ data['from_phone'][i] }}</td>
+			<td> {{ "Delivered" if data['delivered'][i] else "Scheduled" }}</td>
 			<td> {{ data['time'][i] }}</td>
 			<td> <audio controls preload="none"> <source src="{{ data['message'][i] }}" type="audio/wav"></audio></td>
-			<td> {{ data['assigns'][i] }}</td>
-			<td> 
-			<a href="https://twilio.ehhapp.org/voicemails/delete{{ data['id'][i] }}">Delete</a>
-				</td>
+			<td> <a href="https://twilio.ehhapp.org/reminders/{{ data['id'][i] }}/delete" onClick="return confirm(\'Are you sure?\')">Delete</a></td>
 		</tr>
 		{% endfor %}			
 		</tbody>
 	    </table>
 	    {% if data['id']|length == 0 %}
-	    <div class="alert alert-error">No recordings in DB.</div>
+	    <div class="alert alert-success">No reminders scheduled.</div>
 	    {% endif %}
 	    </div>
     </div><!-- /.container -->

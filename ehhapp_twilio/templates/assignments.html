@@ -1,3 +1,4 @@
+
 {% extends "layout.html" %}
 {% block body %}
 		<div class="page-header">
@@ -15,7 +16,7 @@
 		<tbody>
 		{% for i in range(0,data['id']|length) %}
 		<tr>
-			<th scope="row">{{ data['id'][i] }}
+			<th scope="row">{{ data['id'][i] }}</th>
 			<td> {{ data['from_phone'][i] }}</td>
 			<td> {{ data['recipients'][i] }}</td>
 			<td> 

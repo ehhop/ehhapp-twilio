@@ -14,16 +14,17 @@ from flask import flash
 import pytz
 from datetime import datetime, timedelta
 
-#logins
+############# logins ############
+
 login_manager = flask_login.LoginManager()
 login_manager.init_app(app)
 
 @login_manager.user_loader
-def user_loader(user_id):				# used by Flask internally
+def user_loader(user_id):				# used by Flask internally to load logged-in user from session
 	return User.query.get(user_id)
 
 @login_manager.unauthorized_handler
-def unauthorized():					# not logged in callback
+def unauthorized():					# not logged-in callback
 	return render_template('login.html', 
 				vm_client_id = vm_client_id)
 
@@ -72,6 +73,8 @@ def logout():
     flask_login.logout_user()				# delete browser cookie
     return "Logged out. You can close this window now."
 
+######### PLAY VMs ##########
+
 @app.route('/flashplayer', methods=['GET'])
 def serve_vm_player():
 	'''serves the play a voicemail page for a single voicemail'''
@@ -80,40 +83,6 @@ def serve_vm_player():
 				audio_url = audio_url, 
 				vm_client_id = vm_client_id)
 
-@app.route('/reminders', methods=['GET'])
-@flask_login.login_required
-def serve_vm_admin():
-	'''GUI: this actually serves an index of the currently scheduled secure messages going out'''
-	reminders = query_to_dict(Reminder.query.all())
-	return render_template("voicemails.html", 
-				data = reminders)
-
-@app.route('/reminders/<int:remind_id>/delete', methods=['GET'])
-@flask_login.login_required
-def delete_reminder(remind_id):
-	'''GUI: delete a secure message from the DB'''
-	record = Reminder.query.get(remind_id)
-	if record == None:
-		flash('Could not find reminder in database.')
-		return redirect(url_for('serve_vm_admin'))
-	else:
-		db_session.delete(record)
-		db_session.commit()
-		return redirect(url_for('serve_vm_admin'))				
-
-@app.route('/assignments/delete<int:assign_id>', methods=['GET'])
-@flask_login.login_required
-def delete_assignment(assign_id):
-	'''GUI: delete an assignment from the DB'''
-	record = Assignment.query.get(assign_id)
-	if record == None:
-		flash('Could not find assignment in database.')
-		return redirect(url_for('serve_assignment_admin'))
-	else:
-		flash('Assignment removed.')
-		db_session.delete(record)
-		db_session.commit()
-		return redirect(url_for('serve_assignment_admin'))				
 
 @app.route('/play_recording', methods=['GET', 'POST'])
 def play_vm_recording():
@@ -134,9 +103,8 @@ def play_vm_recording():
 	filename = safe_char.sub('', filename)
 	
 	def get_file(filename):						# how do we 'stream' the file from Box to browser? using a callback!
-		# get file
-		class VMFile:						# this will store the VM message in memory instead of in a file
-  			def __init__(self):
+		class VMFile:						# this will store the VM message as a 
+  			def __init__(self):				# memory object instead of in a file (+ deleted after execution)
     				self.data = ""
   			def __call__(self,s):
      				self.data += s
@@ -147,7 +115,17 @@ def play_vm_recording():
 		return v.data						# return the data put back together again to be sent to browser
 	
 	# serve file
-	return Response(get_file(filename), mimetype='audio/wav')	# return data to browser as a .wav file
+	return Response(get_file(filename), mimetype='audio/wav')	# return data to browser as a .wav file from the python object we made
+
+############ ADMIN PANEL indexes #############
+
+@app.route('/reminders', methods=['GET'])
+@flask_login.login_required
+def serve_reminder_admin():
+	'''GUI: this serves an index of the currently scheduled secure messages going out'''
+	reminders = query_to_dict(Reminder.query.all())
+	return render_template("reminders.html", 
+				data = reminders)
 
 @app.route('/intents', methods=['GET'])
 @flask_login.login_required
@@ -164,6 +142,89 @@ def serve_assignment_admin():
         assignments = query_to_dict(Assignment.query.all())
         return render_template("assignments.html",
                                 data = assignments)
+
+@app.route('/calls', methods=['GET'])
+@flask_login.login_required
+def serve_call_admin():
+	'''GUI: serve the call log page'''
+	# TODO: need to add pagination to this!!!
+        calls = query_to_dict(Call.query.all())
+        return render_template("calls.html",
+                                data = calls)
+
+@app.route('/voicemails', methods=['GET'])
+@flask_login.login_required
+def serve_vm_admin():
+	'''GUI: serve the voicemails page'''
+	# TODO: need to add pagination to this!!!
+        voicemails = query_to_dict(Voicemail.query.all())
+	for i in range(0,len(voicemails['id'])):
+		voicemails['intent'][i] = Intent.query.get(voicemails['intent'][i]).description
+		voicemails['message'][i] = recordings_base + voicemails['message'][i]
+        return render_template("voicemails.html",
+                                data = voicemails)
+
+######## reminders:funcs #############
+
+@app.route('/reminders/<int:remind_id>/delete', methods=['GET'])
+@flask_login.login_required
+def delete_reminder(remind_id):
+	'''GUI: delete a secure message from the DB'''
+	record = Reminder.query.get(remind_id)
+	if record == None:
+		flash('Could not find reminder in database.')
+		return redirect(url_for('serve_vm_admin'))
+	else:
+		db_session.delete(record)
+		db_session.commit()
+		return redirect(url_for('serve_vm_admin'))				
+
+######### assignments:funcs ###########
+
+@app.route('/assignments/edit', methods=['GET', 'POST'])
+@flask_login.login_required
+def add_assignment():
+	'''GUI: add an assignment to the DB'''
+	form = AssignmentForm(request.form)
+	if request.method == 'POST' and form.validate():
+		assignment = Assignment(form.from_phone.data, form.recipients.data)
+		db_session.add(assignment)
+		db_session.commit()
+		flash('Assignment added.')
+		return redirect(url_for('serve_assignment_admin'))
+	return render_template("intent_form.html", action="Add", data_type="an assignment", form=form)
+
+@app.route('/assignments/edit<int:assign_id>', methods=['GET', 'POST'])
+@flask_login.login_required
+def edit_assignment(assign_id):
+	'''GUI: edit an assignment in the DB'''
+	assign = Assignment.query.get(assign_id)
+	formout = AssignmentForm(obj=assign)
+	form = AssignmentForm(request.form)
+	if request.method == 'POST' and form.validate():
+		assign.from_phone = form.from_phone.data
+		assign.recipients = form.recipients.data
+		db_session.add(assign)
+		db_session.commit()
+		flash('Assignment edited.')
+		return redirect(url_for('serve_assignment_admin'))
+	return render_template("intent_form.html", action="Edit", data_type=assign.from_phone, form=formout)
+
+@app.route('/assignments/delete<int:assign_id>', methods=['GET'])
+@flask_login.login_required
+def delete_assignment(assign_id):
+	'''GUI: delete an assignment from the DB'''
+	record = Assignment.query.get(assign_id)
+	if record == None:
+		flash('Could not find assignment in database.')
+		return redirect(url_for('serve_assignment_admin'))
+	else:
+		flash('Assignment removed.')
+		db_session.delete(record)
+		db_session.commit()
+		return redirect(url_for('serve_assignment_admin'))				
+
+########## intents:funcs ############
 
 @app.route('/intents/edit', methods=['GET', 'POST'])
 @flask_login.login_required
@@ -197,35 +258,6 @@ def edit_intent(intent_id):
 		return redirect(url_for('serve_intent_admin'))
 	return render_template("intent_form.html", action="Edit", data_type=intent.digit, form=formout)
 
-@app.route('/assignments/edit', methods=['GET', 'POST'])
-@flask_login.login_required
-def add_assignment():
-	'''GUI: add an assignment to the DB'''
-	form = AssignmentForm(request.form)
-	if request.method == 'POST' and form.validate():
-		assignment = Assignment(form.from_phone.data, form.recipients.data)
-		db_session.add(assignment)
-		db_session.commit()
-		flash('Assignment added.')
-		return redirect(url_for('serve_assignment_admin'))
-	return render_template("intent_form.html", action="Add", data_type="an assignment", form=form)
-
-@app.route('/assignments/edit<int:assign_id>', methods=['GET', 'POST'])
-@flask_login.login_required
-def edit_assignment(assign_id):
-	'''GUI: edit an assignment in the DB'''
-	assign = Assignment.query.get(assign_id)
-	formout = AssignmentForm(obj=assign)
-	form = AssignmentForm(request.form)
-	if request.method == 'POST' and form.validate():
-		assign.from_phone = form.from_phone.data
-		assign.recipients = form.recipients.data
-		db_session.add(assign)
-		db_session.commit()
-		flash('Assignment edited.')
-		return redirect(url_for('serve_assignment_admin'))
-	return render_template("intent_form.html", action="Edit", data_type=assign.from_phone, form=formout)
-
 @app.route('/intents/test<int:intent_id>', methods=['GET', 'POST'])
 @flask_login.login_required
 def test_intent(intent_id):
@@ -255,9 +287,11 @@ def test_intent(intent_id):
 		flash(pos + ": " + str(assignresult[pos]))
 	return redirect(url_for('serve_intent_admin'))
 
+############# calls:funcs #############
+
 @app.route('/calls/callback', methods=['GET', 'POST'])
 def add_call():
-	'''add a call record to the DB via Twilio Status Callback'''
+	'''API: add a call record to the DB via Twilio Status Callback'''
 	twilio_client_key = request.values.get('key', None)		# used to auth requests coming from Twilio
 	if twilio_server_key != twilio_client_key:
 		if not flask_login.current_user.is_authenticated:	# block unwanted people from adding records
@@ -288,22 +322,13 @@ def add_call():
 	
 	return "Call record added successfully."
 
-@app.route('/calls', methods=['GET'])
-@flask_login.login_required
-def serve_call_admin():
-	'''GUI: serve the call log page'''
-	# TODO: need to add pagination to this!!!
-        calls = query_to_dict(Call.query.all())
-        return render_template("calls.html",
-                                data = calls)
-
 
 @app.route('/calls/delete<int:call_id>', methods=['GET'])
 @flask_login.login_required
 def delete_call(call_id):
 	'''GUI: delete a call record from the DB'''
 	if app.debug == False:
-		return "Delete not allowed in production.", 301
+		return "Delete not allowed in production.", 403
 	record = Call.query.get(call_id)
 	if record == None:
 		flash('Could not find call record in database.')
@@ -314,6 +339,36 @@ def delete_call(call_id):
 		db_session.commit()
 		return redirect(url_for('serve_call_admin'))				
 
+############ recordings:funcs ##############
+
+def add_voicemail(recording_name, ani=None, intent=None, requireds=None, assigns=None):
+	'''Internal function to accept incoming VMs and store them in DB'''
+	time_now = datetime.now(pytz.timezone('US/Eastern'))
+	record = Voicemail(intent=intent,
+			   from_phone=ani,
+			   time=time_now.strftime('%-m/%-d/%Y %H:%M:%S'),
+			   message=recording_name,
+			   requireds=requireds,
+			   assigns=assigns)
+	db_session.add(record)
+	db_session.commit()
+	return record.id
+
+@app.route('/voicemails/delete<int:record_id>', methods=['GET'])
+@flask_login.login_required
+def delete_vm(record_id):
+	'''GUI: delete a voicemail from the DB'''
+	if app.debug == False:
+		return "Delete not allowed in production.", 403
+	record = Voicemail.query.get(record_id)
+	if record == None:
+		flash('Could not find VM record in database.')
+		return redirect(url_for('serve_vm_admin'))
+	else:
+		flash('Voicemail removed.')
+		db_session.delete(record)
+		db_session.commit()
+		return redirect(url_for('serve_vm_admin'))				
 
 # END
 		

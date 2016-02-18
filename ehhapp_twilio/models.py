@@ -49,6 +49,21 @@ class Reminder(Base):
     def __repr__(self):
         return '<Reminder %r, To: %r, From: %r>' % (self.id, self.to_phone, self.from_phone)
 
+class Voicemail(Base):
+    """A voicemail from a patient."""
+    __tablename__ = 'voicemail'
+
+    id = Column(Integer, primary_key=True)
+    from_phone = Column(EncryptedType(String, flask_secret_key))
+    time = Column(EncryptedType(String, flask_secret_key), default=None)
+    intent = Column(EncryptedType(Integer, flask_secret_key), default=None)
+    message = Column(EncryptedType(String, flask_secret_key), default=None)
+    requireds = Column(EncryptedType(String, flask_secret_key), default=None)
+    assigns = Column(EncryptedType(String, flask_secret_key), default=None)
+
+    def __repr__(self):
+        return '<Voicemail %r, Time: %r>' % (self.id, self.time)
+
 class Call(Base):
 	"""A call coming in and any associated voicemail messages."""
 	__tablename__ = 'call'

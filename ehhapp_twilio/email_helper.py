@@ -5,6 +5,7 @@ from ehhapp_twilio.database_helpers import *
 from ehhapp_twilio.config import *
 from ehhapp_twilio.database import db_session
 from ehhapp_twilio.models import Intent, Assignment
+from ehhapp_twilio.voicemail_helpers import add_voicemail
 
 import smtplib, pytz, requests, random, string, re
 from ftplib import FTP_TLS
@@ -80,6 +81,7 @@ def process_recording(recording_url, intent, ani, requireds=None, assign=None, n
 	if no_requireds:						# if a direct VM (dial_extension)
 		requireds = ''
 	with app.app_context():						# pass the Flask app to the next function (weird rendering quirk)
+		add_voicemail(recording_name, intent=intent, ani=ani, requireds=requireds, assigns=assign)
 		send_email(recording_name, intent, ani, requireds, assign)
 	#delete_file(recording_url)					# delete recording from Twilio
 	return recording_name
