@@ -27,6 +27,7 @@ import ehhapp_twilio.english_path		# Twilio path for english
 import ehhapp_twilio.spanish_path		# Twilio path for spanish
 import ehhapp_twilio.ehhop_members_path		# Twilio path when you press the '*' key after you call
 import ehhapp_twilio.welcome			# initial greeting
+import ehhapp_twilio.webhooks			# slack channel
 
 import logging
 from logging.handlers import SMTPHandler

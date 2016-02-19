@@ -6,6 +6,7 @@ from ehhapp_twilio.config import *
 from ehhapp_twilio.database import db_session
 from ehhapp_twilio.models import Intent, Assignment
 from ehhapp_twilio.voicemail_helpers import add_voicemail
+from ehhapp_twilio.webhooks import *
 
 import smtplib, pytz, requests, random, string, re
 from ftplib import FTP_TLS
@@ -34,6 +35,8 @@ def process_recording(recording_url, intent, ani, requireds=None, assign=None, n
 
 	satdate = getSatDate() # get next clinic date
 	recording_name = save_file(recording_url, auth_method) # save the file
+	playback_url = player_url + recordings_base + recording_name
+	slack_notify('<' + playback_url + '|New voicemail received>')
 	db = EHHOPdb(credentials)
 
 	# figure out who to send the message to
