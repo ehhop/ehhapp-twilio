@@ -21,21 +21,21 @@
 			</tr>
 		</thead>
 		<tbody>
-		{% for i in range(0,data['id']|length) %}
+		{% for intent in intents %}
 		<tr>
-			<th scope="row">{{ data['digit'][i] }}</th>
-			<td> {{ data['description'][i] }}</td>
-			<td> {{ data['required_recipients'][i] }}</td>
-			<td> {{ data['distributed_recipients'][i] }}</td>
+			<th scope="row">{{ intent.digit }}</th>
+			<td> {{ intent.description }}</td>
+			<td> {{ intent.required_recipients }}</td>
+			<td> {{ intent.distributed_recipients }}</td>
 			<td> 
-			<a href="https://twilio.ehhapp.org/intents/edit{{ data['id'][i] }}">Edit</a> 
-			<a href="https://twilio.ehhapp.org/intents/test{{ data['id'][i] }}">Test</a>
+			<a href="https://twilio.ehhapp.org/intents/edit{{ intent.id }}">Edit</a> 
+			<a href="https://twilio.ehhapp.org/intents/test{{ intent.id }}">Test</a>
 				</td>
 		</tr>
 		{% endfor %}			
 		</tbody>
 	    </table>
-	    {% if data['id']|length == 0 %}
+	    {% if intents.first() == None %}
 	    <div class="alert alert-error">No intents in DB.</div>
 	    {% endif %}
 	    <a href="/intents/edit" class="btn btn-lg btn-primary">Add an intent</a>

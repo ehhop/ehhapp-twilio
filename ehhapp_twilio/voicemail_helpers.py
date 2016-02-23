@@ -1,7 +1,7 @@
 #!/usr/bin/python
 from ehhapp_twilio import *
 from ehhapp_twilio.database_helpers import *
-from ehhapp_twilio.database import db_session, query_to_dict
+from ehhapp_twilio.database import db_session
 from ehhapp_twilio.models import *
 from ehhapp_twilio.forms import *
 
@@ -120,50 +120,54 @@ def play_vm_recording():
 ############ ADMIN PANEL indexes #############
 
 @app.route('/reminders', methods=['GET'])
+@app.route('/reminders/<int:page>', methods=['GET'])
 @flask_login.login_required
-def serve_reminder_admin():
+def serve_reminder_admin(page=1):
 	'''GUI: this serves an index of the currently scheduled secure messages going out'''
-	reminders = query_to_dict(Reminder.query.all())
+	reminders = Reminder.query.order_by(Reminder.id.desc()).paginate(page,20,False)
 	return render_template("reminders.html", 
-				data = reminders)
+				reminders = reminders, 
+				recordings_base = recordings_base)
 
 @app.route('/intents', methods=['GET'])
 @flask_login.login_required
 def serve_intent_admin():
 	'''GUI: serve the intents/routing page'''
-        intents = query_to_dict(Intent.query.all())
+        intents = Intent.query
         return render_template("intents.html",
-                                data = intents)
+                                intents = intents)
 
 @app.route('/assignments', methods=['GET'])
+@app.route('/assignments/<int:page>', methods=['GET'])
 @flask_login.login_required
-def serve_assignment_admin():
+def serve_assignment_admin(page=1):
 	'''GUI: serve the phone number assignments page'''
-        assignments = query_to_dict(Assignment.query.all())
+        assignments = Assignment.query.order_by(Assignment.id.desc()).paginate(page,20,False)
         return render_template("assignments.html",
-                                data = assignments)
+                                assignments = assignments)
 
 @app.route('/calls', methods=['GET'])
+@app.route('/calls/<int:page>', methods=['GET'])
 @flask_login.login_required
-def serve_call_admin():
+def serve_call_admin(page=1):
 	'''GUI: serve the call log page'''
 	# TODO: need to add pagination to this!!!
-        calls = query_to_dict(Call.query.all())
+        calls = Call.query.order_by(Call.id.desc()).paginate(page, 20, False)
         return render_template("calls.html",
-                                data = calls)
+                                calls = calls)
 
 @app.route('/voicemails', methods=['GET'])
+@app.route('/voicemails/<int:page>', methods=['GET'])
 @flask_login.login_required
-def serve_vm_admin():
+def serve_vm_admin(page=1):
 	'''GUI: serve the voicemails page'''
 	# TODO: need to add pagination to this!!!
-        voicemails = query_to_dict(Voicemail.query.all())
-	for i in range(0,len(voicemails['id'])):
-		intent = Intent.query.filter_by(digit=voicemails['intent'][i]).first()
-		voicemails['intent'][i] = intent.description if intent != None else None
-		voicemails['message'][i] = recordings_base + voicemails['message'][i] if voicemails['message'][i] != None else None
+        voicemails = Voicemail.query.order_by(Voicemail.id.desc()).paginate(page, 20, False)
+	for vm in voicemails.items:
+		vm.intent = Intent.query.filter_by(digit=vm.intent).first().description
         return render_template("voicemails.html",
-                                data = voicemails)
+                                voicemails = voicemails, 
+				recordings_base = recordings_base)
 
 ######## reminders:funcs #############
 

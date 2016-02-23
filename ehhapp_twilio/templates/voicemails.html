@@ -10,6 +10,21 @@
 	    <div class="page-header">
 		    <h1>Voicemails</h1>
 	    </div>
+	    <nav>
+            <ul class="pager">
+            {% if voicemails.has_prev %}
+                        <li class="pager-prev"><a href="{{ url_for('serve_vm_admin', page=voicemails.prev_num) }}">&lt;&lt; Newer</a></li>
+            {% else %}
+                        <li class="pager-prev disabled"><a href="#">&lt;&lt; Newer</a></li>
+            {% endif %}
+            {% if voicemails.has_next %}
+                        <li class="pager-next"><a href="{{ url_for('serve_vm_admin', page=voicemails.next_num) }}">Older&gt;&gt;</a></li>
+            {% else %}
+                        <li class="pager-next disabled"><a href="#">Older&gt;&gt;</a></li>
+            {% endif %}
+            </ul>
+            </nav>
+
 	    <table class="table table-hover">
 		<thead>
 			<tr>
@@ -23,22 +38,22 @@
 			</tr>
 		</thead>
 		<tbody>
-		{% for i in range(0,data['id']|length) %}
+		{% for vm in voicemails.items %}
 		<tr>
-			<th scope="row">{{ data['id'][i] }}</th>
-			<td> {{ data['intent'][i] }}</td>
-			<td> {{ data['from_phone'][i] }}</td>
-			<td> {{ data['time'][i] }}</td>
-			<td> <audio controls preload="none"> <source src="{{ data['message'][i] }}" type="audio/wav"></audio></td>
-			<td> {{ data['assigns'][i] }}</td>
+			<th scope="row">{{ vm.id }}</th>
+			<td> {{ vm.intent }}</td>
+			<td> {{ vm.from_phone }}</td>
+			<td> {{ vm.time }}</td>
+			<td> <audio controls preload="none"> <source src="{{ recordings_base+vm.message }}" type="audio/wav"></audio></td>
+			<td> {{ vm.assigns }}</td>
 			<td> 
-			<a href="https://twilio.ehhapp.org/voicemails/delete{{ data['id'][i] }}">Delete</a>
+			<a href="https://twilio.ehhapp.org/voicemails/delete{{ vm.id }}">Delete</a>
 				</td>
 		</tr>
 		{% endfor %}			
 		</tbody>
 	    </table>
-	    {% if data['id']|length == 0 %}
+	    {% if voicemails.items|length == 0 %}
 	    <div class="alert alert-error">No recordings in DB.</div>
 	    {% endif %}
 	    </div>

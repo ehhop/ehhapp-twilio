@@ -10,13 +10,25 @@
 	    <div class="page-header">
 		    <h1>Call Log</h1>
 	    </div>
+	    <nav>
+	    <ul class="pager">
+    	    {% if calls.has_prev %}
+			<li class="pager-prev"><a href="{{ url_for('serve_call_admin', page=calls.prev_num) }}">&lt;&lt; Newer</a></li>
+	    {% else %}
+			<li class="pager-prev disabled"><a href="#">&lt;&lt; Newer</a></li>
+	    {% endif %}
+	    {% if calls.has_next %}
+			<li class="pager-next"><a href="{{ url_for('serve_call_admin', page=calls.next_num) }}">Older&gt;&gt;</a></li>
+	    {% else %}
+			<li class="pager-next disabled"><a href="#">Older&gt;&gt;</a></li>
+	    {% endif %}
+	    </ul>
+	    </nav>
 	    <table class="table table-hover">
 		<thead>
 			<tr>
 			<th> # </th>
-			<th> Direction </th>
 			<th> From </th>
-			<th> To </th>
 			<th> Time </th>
 			<th> Duration (sec.) </th>
 			<th> Status </th>
@@ -24,24 +36,23 @@
 			</tr>
 		</thead>
 		<tbody>
-		{% for i in range(0,data['id']|length) %}
+		{% for call in calls.items %}
 		<tr>
-			<th scope="row">{{ data['id'][i] }}</th>
-			<td> {{ data['direction'][i] }}</td>
-			<td> {{ data['from_phone'][i] }}</td>
-			<td> {{ data['to_phone'][i] }}</td>
-			<td> {{ data['time'][i] }}</td>
-			<td> {{ data['duration'][i] }}</td>
-			<td> {{ data['status'][i] }}</td>
+			<th scope="row">{{ call.id }}</th>
+			<td> {{ call.from_phone }}</td>
+			<td> {{ call.time }}</td>
+			<td> {{ call.duration }}</td>
+			<td> {{ call.status }}</td>
 			<td> 
-			<a href="https://twilio.ehhapp.org/calls/delete{{ data['id'][i] }}">Delete</a>
+			<a href="https://twilio.ehhapp.org/calls/delete{{call.id}}">Delete</a>
 				</td>
 		</tr>
 		{% endfor %}			
 		</tbody>
 	    </table>
-	    {% if data['id']|length == 0 %}
+	    {% if calls.items|length == 0 %}
 	    <div class="alert alert-error">No call records in DB.</div>
 	    {% endif %}
 	    </div>
+
 {% endblock %}

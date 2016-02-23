@@ -10,6 +10,21 @@
 		<div class="page-header">
 		    <h1>Scheduled Reminders</h1>
 	    </div>
+	    <nav>
+            <ul class="pager">
+            {% if reminders.has_prev %}
+                        <li class="pager-prev"><a href="{{ url_for('serve_reminder_admin', page=reminders.prev_num) }}">&lt;&lt; Newer</a></li>
+            {% else %}
+                        <li class="pager-prev disabled"><a href="#">&lt;&lt; Newer</a></li>
+            {% endif %}
+            {% if reminders.has_next %}
+                        <li class="pager-next"><a href="{{ url_for('serve_reminder_admin', page=reminders.next_num) }}">Older&gt;&gt;</a></li>
+            {% else %}
+                        <li class="pager-next disabled"><a href="#">Older&gt;&gt;</a></li>
+            {% endif %}
+            </ul>
+            </nav>
+
 	    <table class="table table-hover">
 		<thead>
 			<tr>
@@ -23,20 +38,20 @@
 			</tr>
 		</thead>
 		<tbody>
-		{% for i in range(0,data['id']|length) %}
+		{% for remind in reminders.items %}
 		<tr>
-			<th scope="row">{{ data['id'][i] }}</th>
-			<td> {{ data['to_phone'][i] }}</td>
-			<td> {{ data['from_phone'][i] }}</td>
-			<td> {{ "Delivered" if data['delivered'][i] else "Scheduled" }}</td>
-			<td> {{ data['time'][i] }}</td>
-			<td> <audio controls preload="none"> <source src="{{ data['message'][i] }}" type="audio/wav"></audio></td>
-			<td> <a href="https://twilio.ehhapp.org/reminders/{{ data['id'][i] }}/delete" onClick="return confirm(\'Are you sure?\')">Delete</a></td>
+			<th scope="row">{{ remind.id }}</th>
+			<td> {{ remind.to_phone }}</td>
+			<td> {{ remind.from_phone }}</td>
+			<td> {{ "Delivered" if remind.delivered else "Scheduled" }}</td>
+			<td> {{ remind.time }}</td>
+			<td> <audio controls preload="none"> <source src="{{ recordings_base + remind.message }}" type="audio/wav"></audio></td>
+			<td> <a href="https://twilio.ehhapp.org/reminders/{{ remind.id }}/delete" onClick="return confirm(\'Are you sure?\')">Delete</a></td>
 		</tr>
 		{% endfor %}			
 		</tbody>
 	    </table>
-	    {% if data['id']|length == 0 %}
+	    {% if reminders.items|length == 0 %}
 	    <div class="alert alert-success">No reminders scheduled.</div>
 	    {% endif %}
 	    </div>

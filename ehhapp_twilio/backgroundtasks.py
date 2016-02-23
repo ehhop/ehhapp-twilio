@@ -1,7 +1,7 @@
 from ehhapp_twilio import *
 from ehhapp_twilio.database_helpers import *
 from ehhapp_twilio.email_helper import *
-from celery import Celery
+from celery import Celery, Task
 
 def make_celery(app):
 	'''pass flask to celery when background tasks are run'''

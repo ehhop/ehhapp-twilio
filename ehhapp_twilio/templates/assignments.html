@@ -10,6 +10,21 @@
 		<div class="page-header">
 		    <h1>Assignments</h1>
 	    </div>
+	    <nav>
+            <ul class="pager">
+            {% if assignments.has_prev %}
+                        <li class="pager-prev"><a href="{{ url_for('serve_assignment_admin', page=assignments.prev_num) }}">&lt;&lt; Newer</a></li>
+            {% else %}
+                        <li class="pager-prev disabled"><a href="#">&lt;&lt; Newer</a></li>
+            {% endif %}
+            {% if assignments.has_next %}
+                        <li class="pager-next"><a href="{{ url_for('serve_assignment_admin', page=assignments.next_num) }}">Older&gt;&gt;</a></li>
+            {% else %}
+                        <li class="pager-next disabled"><a href="#">Older&gt;&gt;</a></li>
+            {% endif %}
+            </ul>
+            </nav>
+
 	    <table class="table table-hover">
 		<thead>
 			<tr>
@@ -20,20 +35,20 @@
 			</tr>
 		</thead>
 		<tbody>
-		{% for i in range(0,data['id']|length) %}
+		{% for assign in assignments.items %}
 		<tr>
-			<th scope="row">{{ data['id'][i] }}</th>
-			<td> {{ data['from_phone'][i] }}</td>
-			<td> {{ data['recipients'][i] }}</td>
+			<th scope="row">{{ assign.id }}</th>
+			<td> {{ assign.from_phone }}</td>
+			<td> {{ assign.recipients }}</td>
 			<td> 
-			<a href="https://twilio.ehhapp.org/assignments/edit{{ data['id'][i] }}">Edit</a> 
-			<a href="https://twilio.ehhapp.org/assignments/delete{{ data['id'][i] }}">Delete</a>
+			<a href="https://twilio.ehhapp.org/assignments/edit{{ assign.id }}">Edit</a> 
+			<a href="https://twilio.ehhapp.org/assignments/delete{{ assign.id }}">Delete</a>
 				</td>
 		</tr>
 		{% endfor %}			
 		</tbody>
 	    </table>
-	    {% if data['id']|length == 0 %}
+	    {% if assignments.items|length == 0 %}
 	    <div class="alert alert-info">No assignments in DB.</div>
 	    {% endif %}
 	    <a href="/assignments/edit" class="btn btn-lg btn-primary">Add an assignment</a>
