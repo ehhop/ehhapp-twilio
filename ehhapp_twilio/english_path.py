@@ -56,8 +56,9 @@ def handle_key_hello():
 	elif digit == '*':							# ehhop_members_path menu
 		with resp.gather(numDigits=8, action='/auth_menu', method="POST") as g:
 			g.play('/assets/audio/enterpasscode.mp3')
-	else:									# They have pressed an incorrect key.
-		return redirect('/')
+	else:	
+		resp.play('assets/audio/incorrectkey.mp3')			# They have pressed an incorrect key.
+		resp.redirect('/')
 	return str(resp)							# Return response
 
 	

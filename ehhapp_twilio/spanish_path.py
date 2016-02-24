@@ -39,8 +39,8 @@ def sp_handle_key_hello():
 	
 	else:
 		'''They have pressed an incorrect key.'''
-		return redirect('/sp/')
-	
+		resp.play('assets/audio/sp_incorrectkey.mp3')
+		resp.redirect('/sp/')
 	return str(resp)
 
 	
