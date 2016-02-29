@@ -12,11 +12,17 @@ def parse_url(curr_url, digits, params=params):
 	response = requests.post(curr_url + params + "&Digits=" + str(digits))
 	x = et.fromstring(response.text)
 	for dial in x.findall('Dial'):
-		return dial.text, None, "Dial", dial.text
+		return "Transfer " + dial.text, None, "Dial", dial.text
 	for gather in x.findall('Gather'):
-		return gather.get('action'), gather.get('numDigits'), "Menu", spliturl(response.url)
+		next = gather.get('action')
+		if next[-1].isdigit():
+			next = next[:-2]
+		return next, gather.get('numDigits'), "Menu", spliturl(response.url)
 	for record in x.findall('Record'):
-		return record.get('action'), None, "Record", spliturl(response.url)
+		next = record.get('action')
+		if next[-1].isdigit():
+			next = next[:-2]
+		return next, None, "Record", spliturl(response.url)
 	return None, None, None, None
 
 def main():
@@ -42,6 +48,9 @@ def get_response(last_url, curr_url, next_digit):
 		if action != None:
 			dot.node(redir_url, action + ": " + redir_url)
 			dot.edge(curr_url, redir_url, label=next_digit)
+			if redir_url != next_url:
+				dot.node(next_url, "After: " + next_url)
+				dot.edge(redir_url, next_url)
 			return None
 	else:
                 dot.node(next_url, action + ": " + next_url)
@@ -54,7 +63,11 @@ def get_response(last_url, curr_url, next_digit):
 
 
 def spliturl(urlstring):
-	return urlstring.split("/",3)[3].split("?")[0]
+	result = urlstring.split("/",3)[3].split("?")[0]
+	if len(result) > 0:
+		if result[-1].isdigit():
+			result = result[:-2]
+	return result
 
 if __name__=='__main__':
 	main()
