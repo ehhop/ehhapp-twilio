@@ -11,7 +11,7 @@ from oauth2client import crypt
 from ftplib import FTP_TLS
 from flask import flash
 
-import pytz
+import pytz, os, shutil, random, string
 from datetime import datetime, timedelta
 
 ############# logins ############
@@ -168,6 +168,18 @@ def serve_vm_admin(page=1):
         return render_template("voicemails.html",
                                 voicemails = voicemails, 
 				recordings_base = recordings_base)
+
+@app.route('/audiofiles', methods=['GET'])
+@flask_login.login_required
+def serve_audio_admin():
+	filearray = []
+	for root, dirs, files in os.walk('/var/wsgiapps/ehhapp_twilio/assets/audio/'):
+		for file_ in files:
+			if '.' != file_[0]:
+				filearray.append(file_)
+	filearray = sorted(filearray)
+	return render_template('audiofiles.html',
+				audiofiles = filearray)
 
 ######## reminders:funcs #############
 
@@ -374,6 +386,51 @@ def delete_vm(record_id):
 		db_session.delete(record)
 		db_session.commit()
 		return redirect(url_for('serve_vm_admin'))				
+
+#========== audiofiles: funcs ================
+
+@app.route('/audiofiles/edit/<audio_name>', methods=['GET', 'POST'])
+@flask_login.login_required
+def edit_audio(audio_name):
+	'''GUI: edit an audiofile'''
+	audio_dirname = '/var/wsgiapps/ehhapp_twilio/assets/audio/'
+	if find(audio_name, audio_dirname) == None:
+		flash('No audiofile (with name: ' + audio_name + ') found.')
+		return redirect(url_for('serve_audio_admin'))
+	formout = AudiofileForm(audio_file_name=audio_name)
+	form = AudiofileForm(request.form)
+	if request.method == 'POST' and form.validate():
+		if request.form['audio_file_name'] != audio_name:
+			 shutil.move(os.path.join(audio_dirname,audio_name), os.path.join(audio_dirname, request.form['audio_file_name']))
+		form.audio_file.data = request.files['audio_file']
+		if form.audio_file.data:
+			shutil.move(os.path.join(audio_dirname,audio_name), os.path.join(audio_dirname, audio_name + "_" + randomword(8) + ".bak"))
+			form.audio_file.data.save(audio_dirname + audio_name)
+		flash('Audiofile edited.')
+		return redirect(url_for('serve_audio_admin'))
+	return render_template("intent_form.html", action="Edit", data_type=audio_name, form=formout)
+
+@app.route('/audiofiles/delete/<audio_name>', methods=['GET', 'POST'])
+@flask_login.login_required
+def delete_audio(audio_name):
+	'''GUI: delete audio file'''
+	audio_dirname = '/var/wsgiapps/ehhapp_twilio/assets/audio/'
+	if find(audio_name, audio_dirname) == None:
+		flash('No audiofile (with name: ' + audio_name + ') found.')
+		return redirect(url_for('serve_audio_admin'))
+	os.remove(os.path.join(audio_dirname,audio_name))
+	flash('Audiofile deleted.')
+	return redirect(url_for('serve_audio_admin'))
+
+def find(name, path):
+    for root, dirs, files in os.walk(path):
+        if name in files:
+            return os.path.join(root, name)
+
+def randomword(length):
+        '''generate a random string of whatever length, good for filenames'''
+        return ''.join(random.choice(string.lowercase) for i in range(length))
+
 
 # END
 		

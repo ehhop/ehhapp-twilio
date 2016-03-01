@@ -1,5 +1,10 @@
-from wtforms import Form, TextField, validators
+from wtforms import Form, TextField, validators, FileField
 import re
+
+class DisabledTextField(TextField):
+  def __call__(self, *args, **kwargs):
+    kwargs.setdefault('disabled', True)
+    return super(DisabledTextField, self).__call__(*args, **kwargs)
 
 def filter_phone(value):			# remove other characters except for digits
 	if value == None:
@@ -20,3 +25,7 @@ class AssignmentForm(Form):
 					filters=[lambda x: x, filter_phone])
    recipients = TextField('Assigned to')
 
+class AudiofileForm(Form):
+	'''GUI: edit audio files for IVR menu'''
+	audio_file_name = TextField("Audio file name")
+	audio_file = FileField('Upload new audio')
