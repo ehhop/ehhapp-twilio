@@ -400,12 +400,13 @@ def edit_audio(audio_name):
 	formout = AudiofileForm(audio_file_name=audio_name)
 	form = AudiofileForm(request.form)
 	if request.method == 'POST' and form.validate():
-		if request.form['audio_file_name'] != audio_name:
-			 shutil.move(os.path.join(audio_dirname,audio_name), os.path.join(audio_dirname, request.form['audio_file_name']))
 		form.audio_file.data = request.files['audio_file']
 		if form.audio_file.data:
-			shutil.move(os.path.join(audio_dirname,audio_name), os.path.join(audio_dirname, audio_name + "_" + randomword(8) + ".bak"))
+			if request.form['audio_file_name'] == audio_name:
+				shutil.move(os.path.join(audio_dirname,audio_name), os.path.join(audio_dirname, audio_name + "_" + randomword(8) + ".bak"))
 			form.audio_file.data.save(audio_dirname + audio_name)
+		if request.form['audio_file_name'] != audio_name:
+			 shutil.move(os.path.join(audio_dirname,audio_name), os.path.join(audio_dirname, request.form['audio_file_name']))
 		flash('Audiofile edited.')
 		return redirect(url_for('serve_audio_admin'))
 	return render_template("intent_form.html", action="Edit", data_type=audio_name, form=formout)
