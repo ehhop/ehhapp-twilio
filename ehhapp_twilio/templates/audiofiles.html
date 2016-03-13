@@ -26,8 +26,8 @@
 			<th scope="row">{{ audio }}</th>
 			<td> <audio controls preload="none"> <source src="https://twilio.ehhapp.org/assets/audio/{{ audio }}"></audio></td>
 			<td> 
-			<a href="https://github.com/ehhop/ehhapp-twilio/search?q={{ audio}}">View on Github</a><br>
-			<a href="https://twilio.ehhapp.org/audiofiles/edit/{{ audio }}">Edit</a><br>
+			<a href="https://github.com/ehhop/ehhapp-twilio/search?q={{ audio.split('.')[0] }}">View on Github</a><br>
+			<a href="https://twilio.ehhapp.org/audiofiles/edit/{{ audio }}">Edit</a>
 			<a href="https://twilio.ehhapp.org/audiofiles/delete/{{ audio }}" onclick="return confirm('Are you sure? This cannot be undone.');"><font color="red">Delete</font></a>
 				</td>
 		</tr>

@@ -411,6 +411,22 @@ def edit_audio(audio_name):
 		return redirect(url_for('serve_audio_admin'))
 	return render_template("intent_form.html", action="Edit", data_type=audio_name, form=formout)
 
+@app.route('/audiofiles/add', methods=['GET', 'POST'])
+@flask_login.login_required
+def add_audio():
+	'''GUI: add an audiofile'''
+	audio_dirname = '/var/wsgiapps/ehhapp_twilio/assets/audio/'
+	form = AudiofileForm(request.form)
+	if request.method == 'POST' and form.validate():
+		form.audio_file.data = request.files['audio_file']
+		if form.audio_file.data:
+			form.audio_file.data.save(audio_dirname + request.form['audio_file_name'])
+			flash('Audiofile added.')
+		else:
+			flash('Error: No audiofile uploaded.')
+		return redirect(url_for('serve_audio_admin'))
+	return render_template("intent_form.html", action="Add", data_type=" an audiofile", form=form)
+
 @app.route('/audiofiles/delete/<audio_name>', methods=['GET', 'POST'])
 @flask_login.login_required
 def delete_audio(audio_name):
