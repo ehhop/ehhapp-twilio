@@ -13,8 +13,6 @@ def sp_handle_key_hello():
 		
 	if digit == '2':
 		'''instructions in spanish selected'''
-		# spanish: if this is an emerg, dial 911
-		resp.play('/assets/audio/sp_emerg_911.mp3')
 		if day_of_week == 5: #clinic is open on Saturdays
 			with resp.gather(numDigits=1, action="/handle_key/sp/clinic_open_menu", method="POST") as g:
 				# spanish: list options 1-4 similar to english
