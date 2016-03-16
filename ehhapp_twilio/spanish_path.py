@@ -99,8 +99,10 @@ def sp_clinic_closed_menu():
 @app.route("/sp/take_message/<int:intent>", methods=['GET', 'POST'])
 def sp_take_message(intent):
 	'''takes a voice message and passes it to the voicemail server'''
-	
 	resp = twilio.twiml.Response()
+	
+	resp.play("/assets/audio/sp_vm_instructions.mp3")
+	
 	if intent == 0:
 		to_email = request.values.get('to_email', fallback_email)
 		after_record = '/sp/handle_recording/' + str(intent) + '?to_email=' + to_email
@@ -114,7 +116,7 @@ def sp_take_message(intent):
 		#Please leave a message for us after the tone. Make sure to let us know what times we can call you back. We will call you back within one day.
 		resp.play("/assets/audio/sp_nonurgent_message.mp3")
 
-	resp.play("/assets/audio/sp_vm_instructions.mp3")
+	
 
 	# after patient leaves message, direct them to next step
 	
