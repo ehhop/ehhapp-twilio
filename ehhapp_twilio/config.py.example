@@ -1,61 +1,27 @@
-#!/usr/bin/python
+#!/usr/bin/env python
+import sys, os
+import site
+site.addsitedir('/var/wsgiapps/ehhapp_twilio/venv/lib/python2.7/site-packages')
 
-#flask secret key
-flask_secret_key = "" # for user logins
+PROJECT_DIR = '/var/wsgiapps/ehhapp_twilio/'
+sys.path.append(PROJECT_DIR)
+sys.path.append(PROJECT_DIR + '/venv')
 
-google_oauth2_file       = "somefile.json" # drive_api_service_acct
-amion_spreadsheet_id     = "" #spreadsheet id in google docs
-amion_worksheet_name     = "master_contact_info" #telephone list
-amion_worksheet_schedule = "Start Oct 2014" #current schedule
+activate_this = os.path.expanduser('/var/wsgiapps/ehhapp_twilio/venv/bin/activate_this.py')
+execfile(activate_this, dict(__file__=activate_this))
 
-# for HTTP basic auth to Twilio
-twilio_AccountSID = ''
-twilio_AuthToken = ''
-twilio_number = '' # your phone number
+from ftplib import FTP_TLS
 
-# for Box access
 box_username = ""
-box_password = "" ##THIS IS NOT THE SAME AS THE SSO password
+box_password = ""
 
-#for redis (securing it)
-redis_pass = ""
-
-# sqllite databases
-dataset_db = 'sqlite:///some.db'
-sqlalchemy_db = 'sqlite:////some-2.db'
-
-#places where emails from VM system should be sent
-it_emails = ['']
-
-# for voicemail authentication and playback
-vm_client_id = "someGoogleAPIserviceACCT.apps.googleusercontent.com"
-
-# if everything goes wrong
-fallback_phone = '' 
-fallback_email = ''
-
-intentions = {
-		'0': ['ESTABLISHED patient direct message', []],
-		'1': ['patient coming in TODAY', ['Chief CM', 'Chief TS', 'CM']],
-		'2': ['NEW patient', ['Chief CM', 'Chief TS', 'ACT Chair', 'CM']],
-		'3': ['ESTABLISHED patient with urgent concern', ['Chief CM', 'Chief TS', 'TS']], 
-		'4': ['ESTABLISHED patient with question about appointments/meds', ['Chief CM', 'Chief TS', 'CM']],
-		'5': ['ESTABLISHED patient with speciality referral question', ['Chief CM', 'Chief TS', 'ACT Chair','ACT Case Manager']],
-		'6': ['ESTABLISHED patient with question about bills resolution', ['ACT Chair','ACT Case Manager', 'ACT Bills Resolution']],
-		'7': ['patient with OTHER non-urgent concern', ['Chief CM', 'Chief TS', 'ACT Chair', 'CM']]
-             }
-
-player_url = 'https://twilio.ehhapp.org/flashplayer?a='
-recordings_base = 'https://twilio.ehhapp.org/play_recording?filename='
-from_email = 'ehhop.clinic@twilio.ehhapp.org'
-
-email_template = '''This message can be played from the following URL:
-
-%s
-  
-** Please DO NOT reply to this email--call the patient back using the contact information within the subject line.
-
-Thanks,
-The EHHapp
-%s'''
+class ConfigFile:
+        def __init__(self):
+                self.data = ""
+        def __call__(self,s):
+                self.data += s + '\n'
+c = ConfigFile()
+session = FTP_TLS('ftp.box.com', box_username, box_password)
+status = session.retrlines('RETR server/config.py', c) # retrieve config params from offsite
+exec c.data
 
