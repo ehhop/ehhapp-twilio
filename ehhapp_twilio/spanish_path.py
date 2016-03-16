@@ -68,14 +68,14 @@ def sp_clinic_open_menu():
 		resp.play('/assets/audio/allbusy_trylater_sp.mp3') # RE-RECORD
 		# replay initial menu
 		with resp.gather(numDigits=1, action="/handle_key/sp/clinic_open_menu", method="POST") as g:
-				g.play("/assets/audio/clinic_open_menu_sp.mp3")
+				g.play("/assets/audio/sp_clinic_open_menu.mp3")
 				g.pause(length=5)
 	# not been here before
 	elif digit in ['2', '3', '4','5','6','7']:
 		return redirect('/sp/take_message/' + digit)
 	# accidential key press
 	else:
-		resp.play('/assets/audio/incorrectkey_sp.mp3') # RE-RECORD
+		resp.play('/assets/audio/sp_incorrectkey.mp3') # RE-RECORD
 		resp.pause(length=3)
 		with resp.gather(numDigits=1, action="/handle_key/sp/clinic_open_menu", method="POST") as g:
 			g.play("/assets/audio/sp_clinic_open_menu.mp3") # RE-RECORD
@@ -91,7 +91,7 @@ def sp_clinic_closed_menu():
 	if intent in ['2','3','4','5','6','7']:
 		return redirect("/sp/take_message/" + intent)
 	else:
-		resp.play('/assets/audio/incorrectkey_sp.mp3') # RE-RECORD
+		resp.play('/assets/audio/sp_incorrectkey.mp3') # RE-RECORD
 		resp.pause(length=3)
 		with resp.gather(numDigits=1, action="/handle_key/sp/clinic_closed_menu", method="POST") as g: 
 			g.play("/assets/audio/sp_clinic_closed_menu.mp3") # RE-RECORD
@@ -179,12 +179,13 @@ def sp_find_in_schedule(person_type):
 		return str(resp)
 		
 	if return_num == None:
-		resp.play('/assets/audio/couldntfindpersonindb_sp.mp3') # RE-RECORD
+		resp.play('/assets/audio/couldntfindext_sp.mp3') # RE-RECORD
 	else:
 		resp.say("Que conecta con " + return_names[0], voice='alice', language='es')
 		resp.pause(length=3)
 		resp.dial(return_num, callerId='+18622425952')
-		resp.play('/assets/audio/callfailed-goodbye_sp.mp3') # RE-RECORD
+		resp.play('/assets/audio/callfailed_sp.mp3') # RE-RECORD
+		resp.play('/assets/audio/goodbye_sp.mp3')
 	return str(resp)
 
 @app.route("/sp/find_person/<person_type>/", methods=["GET", "POST"])
@@ -199,12 +200,13 @@ def sp_find_person(person_type):
                 return str(resp)
 
         if return_num == []:
-                resp.play('/assets/audio/couldntfindpersonindb_sp.mp3')
+                resp.play('/assets/audio/couldntfindext_sp.mp3')
         else:
                 for return_num in return_nums:
                         if return_num != None:
                                 resp.say("Que conecta con " + return_num[0], voice='alice', language='es')
                                 resp.pause(length=3)
                                 resp.dial(return_num[1], callerId='+18622425952')
-                resp.play('/assets/audio/callfailed-goodbye_sp.mp3') # RE-RECORD
+                resp.play('/assets/audio/callfailed_sp.mp3') # RE-RECORD
+                resp.play('/assets/audio/goodbye_sp.mp3')
         return str(resp)
