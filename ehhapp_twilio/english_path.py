@@ -8,8 +8,9 @@ def handle_key_hello():
 	'''respond to initial direction from the welcome greeting (1st menu)'''
 	resp = twilio.twiml.Response()
 	digit = request.values.get('Digits', None) 				# get digit pressed
-	#day_of_week = datetime.now(pytz.timezone('US/Eastern')).weekday()	# get day of week (0 is Monday and 6 is Sunday)
-	day_of_week=5	
+	day_of_week = datetime.now(pytz.timezone('US/Eastern')).weekday()	# get day of week (0 is Monday and 6 is Sunday)
+	if day_of_week == 1: #hack for tuesday clinic FIX TODO
+		day_of_week = 5
 	if digit == '1':						   	# pressed 1 - english
 		'''instructions in english selected'''
 		if day_of_week == 5: 						# clinic is open on Saturdays
