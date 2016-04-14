@@ -30,11 +30,11 @@
 		<thead>
 			<tr>
 			<th> # </th>
-			<th> Intent </th>
 			<th> From </th>
 			<th> Time </th>
+			<th> Intent </th>
+			<th> Assigned to </th>
 			<th> Message </th>
-			<th> Sent to </th>
 			<th> Actions </th>
 			</tr>
 		</thead>
@@ -42,11 +42,11 @@
 		{% for vm in voicemails.items %}
 		<tr>
 			<th scope="row">{{ vm.id }}</th>
-			<td> {{ vm.intent }}</td>
 			<td> {{ vm.from_phone }}</td>
 			<td> {{ vm.time }}</td>
-			<td> <audio controls preload="none"> <source src="{{ recordings_base+vm.message }}" type="audio/wav"></audio></td>
+			<td> {{ vm.intent }}</td>
 			<td> {{ vm.assigns }}</td>
+			<td> <audio controls preload="none"> <source src="{{ recordings_base+vm.message }}" type="audio/wav"></audio></td>
 			<td> 
 			<a href="https://twilio.ehhapp.org/voicemails/delete{{ vm.id }}">Delete</a>
 				</td>

@@ -32,7 +32,7 @@
 			<th> From </th>
 			<th> Time </th>
 			<th> Duration (sec.) </th>
-			<th> Status </th>
+			<th> Voicemail </th>
 			<th> Actions </th>
 			</tr>
 		</thead>
@@ -43,7 +43,7 @@
 			<td> {{ call.from_phone }}</td>
 			<td> {{ call.time }}</td>
 			<td> {{ call.duration }}</td>
-			<td> {{ call.status }}</td>
+			<td> {% if call.voicemails != [] %}{{ call.voicemails }}{% else %}None{% endif %}</td>
 			<td> 
 			<a href="https://twilio.ehhapp.org/calls/delete{{call.id}}">Delete</a>
 				</td>

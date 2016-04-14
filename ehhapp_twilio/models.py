@@ -53,6 +53,7 @@ class Voicemail(db.Model):
     __tablename__ = 'voicemail'
 
     id = db.Column(db.Integer, primary_key=True)
+    call_sid = db.Column(db.String, db.ForeignKey('call.call_sid'))
     from_phone = db.Column(EncryptedType(db.String, flask_secret_key))
     time = db.Column(EncryptedType(db.String, flask_secret_key), default=None)
     intent = db.Column(EncryptedType(db.Integer, flask_secret_key), default=None)
@@ -68,13 +69,14 @@ class Call(db.Model):
 	__tablename__ = 'call'
 	
 	id = db.Column(db.Integer, primary_key=True)
-	call_sid = db.Column(db.String)
+	call_sid = db.Column(db.String, unique=True)
 	from_phone = db.Column(EncryptedType(db.String, flask_secret_key))
 	to_phone = db.Column(EncryptedType(db.String, flask_secret_key))
 	time = db.Column(EncryptedType(db.String, flask_secret_key))
 	duration = db.Column(EncryptedType(db.String, flask_secret_key))
 	direction = db.Column(EncryptedType(db.String, flask_secret_key))
 	status = db.Column(EncryptedType(db.String, flask_secret_key))
+	voicemails = db.relationship("Voicemail", backref="call")
 	actions = db.Column(EncryptedType(db.String, flask_secret_key))
 
 	def __repr__(self):

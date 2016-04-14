@@ -22,7 +22,7 @@ from flask.ext.mail import Message
 # user/pass to log into Twilio to retrieve files
 auth_combo=HTTPBasicAuth(twilio_AccountSID, twilio_AuthToken)
 
-def process_recording(recording_url, intent, ani, requireds=None, assign=None, no_requireds=False, auth_method=auth_combo):
+def process_recording(recording_url, intent, ani, requireds=None, assign=None, no_requireds=False, auth_method=auth_combo, call_sid=None):
 	'''process_recording(recording_url, intent, ani, requireds=None, assign=None, auth_method=auth_combo)
 	recording_url:	URL of recording to download
 	intent:		the digit pressed by the caller
@@ -84,16 +84,16 @@ def process_recording(recording_url, intent, ani, requireds=None, assign=None, n
 	if no_requireds:						# if a direct VM (dial_extension)
 		requireds = ''
 	with app.app_context():						# pass the Flask app to the next function (weird rendering quirk)
-		add_voicemail(recording_name, intent=intent, ani=ani, requireds=requireds, assigns=assign)
+		add_voicemail(recording_name, intent=intent, ani=ani, requireds=requireds, assigns=assign, call_sid=call_sid)
 		send_email(recording_name, intent, ani, requireds, assign)
 	#delete_file(recording_url)					# delete recording from Twilio
 	return recording_name
 
 def send_email(recording_name, intent, ani, requireds, assign, app=app):
 	'''send an email to the required and assigned recipients'''
-	if app.debug==True:
-		requireds = ','.join(it_emails)
-		assign = ','.join(it_emails)
+	#if app.debug==True:
+	#	requireds = ','.join(it_emails)
+	#	assign = ','.join(it_emails)
 	intent = str(intent)
 	# look for configuration variables in params.conf file...
 	msg = Message(sender=from_email)
