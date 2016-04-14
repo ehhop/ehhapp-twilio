@@ -138,31 +138,28 @@ def serve_intent_admin():
                                 intents = intents)
 
 @app.route('/assignments', methods=['GET'])
-@app.route('/assignments/<int:page>', methods=['GET'])
 @flask_login.login_required
-def serve_assignment_admin(page=1):
+def serve_assignment_admin():
 	'''GUI: serve the phone number assignments page'''
-        assignments = Assignment.query.order_by(Assignment.id.desc()).paginate(page,20,False)
+        assignments = Assignment.query.order_by(Assignment.id.desc())
         return render_template("assignments.html",
                                 assignments = assignments)
 
 @app.route('/calls', methods=['GET'])
-@app.route('/calls/<int:page>', methods=['GET'])
 @flask_login.login_required
-def serve_call_admin(page=1):
+def serve_call_admin():
 	'''GUI: serve the call log page'''
 	# TODO: need to add pagination to this!!!
-        calls = Call.query.order_by(Call.id.desc()).paginate(page, 20, False)
+        calls = Call.query.order_by(Call.id.desc())
         return render_template("calls.html",
                                 calls = calls)
 
 @app.route('/voicemails', methods=['GET'])
-@app.route('/voicemails/<int:page>', methods=['GET'])
 @flask_login.login_required
-def serve_vm_admin(page=1):
+def serve_vm_admin():
 	'''GUI: serve the voicemails page'''
 	# TODO: need to add pagination to this!!!
-        voicemails = Voicemail.query.order_by(Voicemail.id.desc()).paginate(page, 20, False)
+        voicemails = Voicemail.query.order_by(Voicemail.id.desc())
 	for vm in voicemails.items:
 		vm.intent = Intent.query.filter_by(digit=vm.intent).first().description
         return render_template("voicemails.html",
