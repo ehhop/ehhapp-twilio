@@ -300,8 +300,7 @@ def test_intent(intent_id):
 		interresult = db.lookup_name_in_schedule(pos, getSatDate())
 		for i in interresult:
 			phone = db.lookup_phone_by_name(i)
-			email = db.lookup_email_by_name(i)
-			assignresult[pos].append([i, (email, phone)])
+			assignresult[pos].append([i, phone])
 		flash(pos + ": " + str(assignresult[pos]))
 	return redirect(url_for('serve_intent_admin'))
 
@@ -359,7 +358,7 @@ def delete_call(call_id):
 
 ############ recordings:funcs ##############
 
-def add_voicemail(recording_name, ani=None, intent=None, requireds=None, assigns=None, call_sid=None):
+def add_voicemail(recording_name, ani=None, intent=None, requireds=None, assigns=None):
 	'''Internal function to accept incoming VMs and store them in DB'''
 	time_now = datetime.now(pytz.timezone('US/Eastern'))
 	record = Voicemail(intent=intent,
@@ -367,8 +366,7 @@ def add_voicemail(recording_name, ani=None, intent=None, requireds=None, assigns
 			   time=time_now.strftime('%-m/%-d/%Y %H:%M:%S'),
 			   message=recording_name,
 			   requireds=requireds,
-			   assigns=assigns, 
-			   call_sid=call_sid)
+			   assigns=assigns)
 	db_session.add(record)
 	db_session.commit()
 	return record.id

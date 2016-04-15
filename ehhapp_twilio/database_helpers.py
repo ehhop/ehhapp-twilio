@@ -23,7 +23,7 @@ class EHHOPdb:							# our Google Drive database
 		filen = self.conn["names"]
 		records = json.load(open(filen))
 		#remove header lines or those deactivated by '#'
-		records = [i for i in records if "#" not in i["Name"]]
+		records = [i for i in records if i['Name'][0] != "#"]
 		return records
 
 	def getschedule(self):
@@ -42,14 +42,14 @@ class EHHOPdb:							# our Google Drive database
 	def lookup_phone_by_name(self, name):
 		# get a phone number from a name, like from the schedule
 		for record in self.personnel:
-			if name.strip() == record['Name']:
+			if name == record['Name']:
 				return '+1' + self.sanitize.sub('', record['Telephone']) # if we found the extension
 		return None # if no return
 
 	def lookup_email_by_name(self, name):
 		# get an email from a name, like from the schedule
 		for record in self.personnel:
-			if name.strip() == record['Name']:
+			if name == record['Name']:
 				return record['Email'] # if we found the extension
 		return None # if no return
 

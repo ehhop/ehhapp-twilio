@@ -20,11 +20,11 @@ def make_celery(app):
 celery = make_celery(app)
 
 @celery.task(name='tasks.async_process_message')
-def async_process_message(recording_url, intent, ani, requireds=None, assign=None, no_requireds=False, call_sid=None):
+def async_process_message(recording_url, intent, ani, requireds=None, assign=None, no_requireds=False):
 	'''background download a VM message, send emails, etc.'''
 	name = process_recording(recording_url, intent, ani, requireds=requireds, 
 							     assign=assign, 
-							     no_requireds=no_requireds, call_sid=call_sid)
+							     no_requireds=no_requireds)
 	return name
 
 @celery.task
