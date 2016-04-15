@@ -11,11 +11,26 @@
 	    <div class="page-header">
 		    <h1>Call Log</h1>
 	    </div>
-	    <table class="table table-hover" id="activesort">
+	    <nav>
+	    <ul class="pager">
+    	    {% if calls.has_prev %}
+			<li class="pager-prev"><a href="{{ url_for('serve_call_admin', page=calls.prev_num) }}">&lt;&lt; Newer</a></li>
+	    {% else %}
+			<li class="pager-prev disabled"><a href="#">&lt;&lt; Newer</a></li>
+	    {% endif %}
+	    {% if calls.has_next %}
+			<li class="pager-next"><a href="{{ url_for('serve_call_admin', page=calls.next_num) }}">Older&gt;&gt;</a></li>
+	    {% else %}
+			<li class="pager-next disabled"><a href="#">Older&gt;&gt;</a></li>
+	    {% endif %}
+	    </ul>
+	    </nav>
+	    <table class="table table-hover">
 		<thead>
 			<tr>
-			<th> Time </th>
+			<th> # </th>
 			<th> From </th>
+			<th> Time </th>
 			<th> Duration (sec.) </th>
 			<th> Voicemail </th>
 			<th> Actions </th>
@@ -24,8 +39,9 @@
 		<tbody>
 		{% for call in calls.items %}
 		<tr>
-			<td> {{ call.time }}</td>
+			<th scope="row">{{ call.id }}</th>
 			<td> {{ call.from_phone }}</td>
+			<td> {{ call.time }}</td>
 			<td> {{ call.duration }}</td>
 			<td> {% if call.voicemails != [] %}{{ call.voicemails }}{% else %}None{% endif %}</td>
 			<td> 

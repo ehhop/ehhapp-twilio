@@ -11,7 +11,22 @@
 		<div class="page-header">
 		    <h1>Assignments</h1>
 	    </div>
-	    <table class="table table-hover" id="activesort">
+	    <nav>
+            <ul class="pager">
+            {% if assignments.has_prev %}
+                        <li class="pager-prev"><a href="{{ url_for('serve_assignment_admin', page=assignments.prev_num) }}">&lt;&lt; Newer</a></li>
+            {% else %}
+                        <li class="pager-prev disabled"><a href="#">&lt;&lt; Newer</a></li>
+            {% endif %}
+            {% if assignments.has_next %}
+                        <li class="pager-next"><a href="{{ url_for('serve_assignment_admin', page=assignments.next_num) }}">Older&gt;&gt;</a></li>
+            {% else %}
+                        <li class="pager-next disabled"><a href="#">Older&gt;&gt;</a></li>
+            {% endif %}
+            </ul>
+            </nav>
+
+	    <table class="table table-hover">
 		<thead>
 			<tr>
 			<th> # </th>
