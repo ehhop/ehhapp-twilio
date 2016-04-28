@@ -4,51 +4,34 @@
 <li class="active"><a href="/voicemails">Voicemails</a></li>
 <li class="inactive"><a href="/intents">Routing</a></li>
 <li class="inactive"><a href="/assignments">Assignments</a></li>
-<li class="inactive"><a href="/reminders">Messages</a></li>
+<li class="inactive"><a href="/reminders">Reminders</a></li>
 <li class="inactive"><a href="/audiofiles">Audio</a></li>
 {% endblock %}
 {% block body %}
 	    <div class="page-header">
 		    <h1>Voicemails</h1>
 	    </div>
-	    <nav>
-            <ul class="pager">
-            {% if voicemails.has_prev %}
-                        <li class="pager-prev"><a href="{{ url_for('serve_vm_admin', page=voicemails.prev_num) }}">&lt;&lt; Newer</a></li>
-            {% else %}
-                        <li class="pager-prev disabled"><a href="#">&lt;&lt; Newer</a></li>
-            {% endif %}
-            {% if voicemails.has_next %}
-                        <li class="pager-next"><a href="{{ url_for('serve_vm_admin', page=voicemails.next_num) }}">Older&gt;&gt;</a></li>
-            {% else %}
-                        <li class="pager-next disabled"><a href="#">Older&gt;&gt;</a></li>
-            {% endif %}
-            </ul>
-            </nav>
-
-	    <table class="table table-hover">
+	    <table class="table table-hover" id="activesort">
 		<thead>
 			<tr>
-			<th> # </th>
-			<th> Intent </th>
-			<th> From </th>
 			<th> Time </th>
+			<th> From </th>
+			<th> Intent </th>
+			<th> Assigned to </th>
 			<th> Message </th>
-			<th> Sent to </th>
 			<th> Actions </th>
 			</tr>
 		</thead>
 		<tbody>
 		{% for vm in voicemails.items %}
 		<tr>
-			<th scope="row">{{ vm.id }}</th>
-			<td> {{ vm.intent }}</td>
-			<td> {{ vm.from_phone }}</td>
 			<td> {{ vm.time }}</td>
-			<td> <audio controls preload="none"> <source src="{{ recordings_base+vm.message }}" type="audio/wav"></audio></td>
+			<td> {{ vm.from_phone[0:3] + "-" + vm.from_phone[3:6] + "-" + vm.from_phone[6:] }}</td>
+			<td> {{ vm.intent }}</td>
 			<td> {{ vm.assigns }}</td>
+			<td> <audio controls preload="none" style="width:200px"> <source src="{{ recordings_base+vm.message }}" type="audio/wav"></audio></td>
 			<td> 
-			<a href="https://twilio.ehhapp.org/voicemails/delete{{ vm.id }}">Delete</a>
+			<a href="https://twilio.ehhapp.org/voicemails/delete{{ vm.id }}" class="btn btn-xs btn-danger" role="button">Delete</a>
 				</td>
 		</tr>
 		{% endfor %}			

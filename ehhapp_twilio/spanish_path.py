@@ -10,7 +10,8 @@ def sp_handle_key_hello():
 	digit = request.values.get('Digits', None)
 	#get day of week (0 is Monday and 6 is Sunday)
 	day_of_week = datetime.now(pytz.timezone('US/Eastern')).weekday()
-		
+	if day_of_week == 1: # hack for tuesday clinic
+		day_of_week = 5	
 	if digit == '2':
 		'''instructions in spanish selected'''
 		if day_of_week == 5: #clinic is open on Saturdays

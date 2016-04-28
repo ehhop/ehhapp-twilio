@@ -4,48 +4,32 @@
 <li class="inactive"><a href="/voicemails">Voicemails</a></li>
 <li class="inactive"><a href="/intents">Routing</a></li>
 <li class="inactive"><a href="/assignments">Assignments</a></li>
-<li class="inactive"><a href="/reminders">Messages</a></li>
+<li class="inactive"><a href="/reminders">Reminders</a></li>
 <li class="inactive"><a href="/audiofiles">Audio</a></li>
 {% endblock %}
 {% block body %}
 	    <div class="page-header">
 		    <h1>Call Log</h1>
 	    </div>
-	    <nav>
-	    <ul class="pager">
-    	    {% if calls.has_prev %}
-			<li class="pager-prev"><a href="{{ url_for('serve_call_admin', page=calls.prev_num) }}">&lt;&lt; Newer</a></li>
-	    {% else %}
-			<li class="pager-prev disabled"><a href="#">&lt;&lt; Newer</a></li>
-	    {% endif %}
-	    {% if calls.has_next %}
-			<li class="pager-next"><a href="{{ url_for('serve_call_admin', page=calls.next_num) }}">Older&gt;&gt;</a></li>
-	    {% else %}
-			<li class="pager-next disabled"><a href="#">Older&gt;&gt;</a></li>
-	    {% endif %}
-	    </ul>
-	    </nav>
-	    <table class="table table-hover">
+	    <table class="table table-hover" id="activesort">
 		<thead>
 			<tr>
-			<th> # </th>
-			<th> From </th>
 			<th> Time </th>
+			<th> From </th>
 			<th> Duration (sec.) </th>
-			<th> Status </th>
+			<th> Voicemail </th>
 			<th> Actions </th>
 			</tr>
 		</thead>
 		<tbody>
 		{% for call in calls.items %}
 		<tr>
-			<th scope="row">{{ call.id }}</th>
-			<td> {{ call.from_phone }}</td>
 			<td> {{ call.time }}</td>
+			<td> {{ call.from_phone[2:5] + "-" + call.from_phone[5:8] + "-" + call.from_phone[8:] }}</td>
 			<td> {{ call.duration }}</td>
-			<td> {{ call.status }}</td>
+			<td> {% if call.voicemails|length != 0 %}{{ call.voicemails[0] }}{% else %}None{% endif %}</td>
 			<td> 
-			<a href="https://twilio.ehhapp.org/calls/delete{{call.id}}">Delete</a>
+			<a href="https://twilio.ehhapp.org/calls/delete{{call.id}}" class="btn btn-xs btn-danger" role="button">Delete</a>
 				</td>
 		</tr>
 		{% endfor %}			

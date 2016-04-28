@@ -10,6 +10,13 @@
     <div class="input">
       {% if field.name == "body" %}
         {{ field(rows=10, cols=40) }}
+      {% elif field.name == "audio_file" %}
+	<span class="input-grp-btn">
+	<span class="btn btn-primary btn-file">
+	Browse…
+	{{ field(class="form-control") }}
+	</span>
+	</span>
       {% else %}
 	<div class="row">
 		<div class="col-xs-6">

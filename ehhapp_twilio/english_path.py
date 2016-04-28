@@ -69,7 +69,7 @@ def clinic_open_menu():
 	resp = twilio.twiml.Response()
 	intent = request.values.get('Digits', None)				# get keypress
 
-	oncall_current_phone = fallback_phone				# get the phone # of the on call - fallback if something wrong
+	oncall_current_phone = getOnCallPhoneNum()				# get the phone # of the on call - fallback if something wrong
 
 	if intent == '1':  							# appointment today
 		resp.play("/assets/audio/xfer_call.mp3")			# now transferring to oncall

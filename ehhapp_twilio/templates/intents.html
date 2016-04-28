@@ -4,13 +4,30 @@
 <li class="inactive"><a href="/voicemails">Voicemails</a></li>
 <li class="active"><a href="/intents">Routing</a></li>
 <li class="inactive"><a href="/assignments">Assignments</a></li>
-<li class="inactive"><a href="/reminders">Messages</a></li>
+<li class="inactive"><a href="/reminders">Reminders</a></li>
 <li class="inactive"><a href="/audiofiles">Audio</a></li>
 {% endblock %}
 {% block body %}
 	    <div class="page-header">
-		    <h1>Intents</h1>
+		    <h1>Routing</h1>
 	    </div>
+	    <div class="row">
+  	<div class="col-sm-4">
+        		<h3>Routing diagram</h3>
+			<p>View a graphical representation of the phone tree</p>
+	        	<p><a href="/assets/images/ehhapp-twilio-routes.pdf" class="btn btn-primary" role="button">View</a> <a href="/audiofiles" class="btn btn-default" role="button">Change audio</a></p>
+			<p><a href="https://docs.google.com/spreadsheets/d/1bGuP1jCmL5HcXJp0EHpnfRKsQ-6Tnx6keCgDpMhVY-k/edit#gid=315864988" class="btn btn-success" role="button">Edit EHHOP AMION / Directory</a></p>
+	</div>
+	<div class="col-sm-4">
+			<h4>Main number</h4>
+			<h2><a href="tel://8622425952">(862) 242-5952</a></h2>
+	</div>
+	<div class="col-sm-4">
+			<h4>Conference line</h4>
+			<h2><a href="tel://8622102125">(862) 210-2125</a></h2>
+	</div>
+	</div>
+	<div class="row">
 	    <table class="table table-hover">
 		<thead>
 			<tr>
@@ -24,13 +41,13 @@
 		<tbody>
 		{% for intent in intents %}
 		<tr>
-			<th scope="row">{{ intent.digit }}</th>
+			<th scope="row">{% if intent.digit != 0 %}{{ intent.digit }}{% else %}-{% endif %}</th>
 			<td> {{ intent.description }}</td>
 			<td> {{ intent.required_recipients }}</td>
 			<td> {{ intent.distributed_recipients }}</td>
-			<td> 
-			<a href="https://twilio.ehhapp.org/intents/edit{{ intent.id }}">Edit</a> 
-			<a href="https://twilio.ehhapp.org/intents/test{{ intent.id }}">Test</a>
+			<td style="min-width:100px"> 
+			<a href="https://twilio.ehhapp.org/intents/edit{{ intent.id }}" class="btn btn-xs btn-primary" role="button">Edit</a> 
+			<a href="https://twilio.ehhapp.org/intents/test{{ intent.id }}" class="btn btn-xs btn-success" role="button">Test</a>
 				</td>
 		</tr>
 		{% endfor %}			
@@ -39,7 +56,7 @@
 	    {% if intents.first() == None %}
 	    <div class="alert alert-error">No intents in DB.</div>
 	    {% endif %}
-	    <a href="/intents/edit" class="btn btn-lg btn-primary">Add an intent</a>
+	    <a href="/intents/edit" class="btn btn-sm btn-primary">Add a new route</a>
 	    </div>
     </div><!-- /.container -->
 {% endblock %}

@@ -124,7 +124,7 @@ def play_vm_recording():
 @flask_login.login_required
 def serve_reminder_admin(page=1):
 	'''GUI: this serves an index of the currently scheduled secure messages going out'''
-	reminders = Reminder.query.order_by(Reminder.id.desc()).paginate(page,20,False)
+	reminders = Reminder.query.order_by(Reminder.id.desc()).paginate(page,2000,False)
 	return render_template("reminders.html", 
 				reminders = reminders, 
 				recordings_base = recordings_base)
@@ -142,7 +142,7 @@ def serve_intent_admin():
 @flask_login.login_required
 def serve_assignment_admin(page=1):
 	'''GUI: serve the phone number assignments page'''
-        assignments = Assignment.query.order_by(Assignment.id.desc()).paginate(page,20,False)
+        assignments = Assignment.query.order_by(Assignment.id.desc()).paginate(page,2000,False)
         return render_template("assignments.html",
                                 assignments = assignments)
 
@@ -162,7 +162,7 @@ def serve_call_admin(page=1):
 def serve_vm_admin(page=1):
 	'''GUI: serve the voicemails page'''
 	# TODO: need to add pagination to this!!!
-        voicemails = Voicemail.query.order_by(Voicemail.id.desc()).paginate(page, 20, False)
+        voicemails = Voicemail.query.order_by(Voicemail.id.desc()).paginate(page, 2000, False)
 	for vm in voicemails.items:
 		vm.intent = Intent.query.filter_by(digit=vm.intent).first().description
         return render_template("voicemails.html",

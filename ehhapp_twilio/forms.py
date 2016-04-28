@@ -27,5 +27,5 @@ class AssignmentForm(Form):
 
 class AudiofileForm(Form):
 	'''GUI: edit audio files for IVR menu'''
-	audio_file_name = TextField("Audio file name")
 	audio_file = FileField('Upload new audio')
+	audio_file_name = TextField("Audio file name")

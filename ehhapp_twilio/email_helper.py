@@ -100,18 +100,18 @@ def send_email(recording_name, intent, ani, requireds, assign, app=app):
 	description = Intent.query.filter_by(digit=intent).first().description
 	assign_names = ''
 	if assign == None:
-		msg.subject = 'TESTING - PLEASE IGNORE - EHHOP voicemail from ' + description + ", number " + ani
+		msg.subject = 'EHHOP voicemail from ' + description + ", number " + ani
 	else:
 		assign_names = " and ".join([a.split('@')[0].replace("."," ").title() for a in assign.split(',')]) # fancy :)
-		msg.subject = 'TESTING - PLEASE IGNORE - ' + assign_names + ' assigned EHHOP voicemail from ' + description + ", number " + ani
+		msg.subject = assign_names + ' assigned EHHOP voicemail from ' + description + ", number " + ani
 		
 	msg.sender  = from_email
 	msg.recipients = assign.split(',') if ',' in assign else [assign]
 	msg.cc = requireds.split(',') if ',' in requireds else [requireds]
 	msg.html = render_template('email.html', from_phone = ani, assign_names = assign_names, 
-					playback_url = player_url + recordings_base + recording_name)
+					playback_url = player_url + recordings_base + recording_name, desc = description)
 	msg.body = render_template('email.txt', from_phone = ani, assign_names = assign_names, 
-					playback_url = player_url + recordings_base + recording_name)
+					playback_url = player_url + recordings_base + recording_name, desc = description)
 	mail.send(msg)
 	return None
 
