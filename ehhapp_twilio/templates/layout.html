@@ -35,20 +35,15 @@
     <script src="/assets/bootstrap/js/bootstrap.min.js"></script>
     <script src="//ajax.googleapis.com/ajax/libs/jquery/2.2.2/jquery.min.js"></script>
     <script src="//cdn.datatables.net/1.10.11/js/jquery.dataTables.min.js"></script>
+    <script src="//cdn.datatables.net/1.10.11/js/dataTables.bootstrap.min.js"></script>
     <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
     <script src="/assets/bootstrap/js/ie10-viewport-bug-workaround.js"></script>
+    <script src="/assets/momentjs/moment.min.js"></script>
     <script type="text/javascript">$(document).ready(function(){
                  $('#activesort').DataTable({
 		  "order": [[ 0, "desc" ]]
 		  });
                 });
-		var separator = '-';
-	$( ".phone" ).text( function( i, DATA ) {
-    		DATA
-        	.replace( /[^\d]/g, '' )
-        	.replace( /(\d{3})(\d{3})(\d{4})/, '$1' + separator + '$2' + separator + '$3' );
-    		return DATA;
-	});
     </script>
   </head>
 

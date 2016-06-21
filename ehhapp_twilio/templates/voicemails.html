@@ -14,8 +14,9 @@
 	    <table class="table table-hover" id="activesort">
 		<thead>
 			<tr>
+			<th> # </th>
 			<th> Time </th>
-			<th> From </th>
+			<th style="min-width:100px"> From </th>
 			<th> Intent </th>
 			<th> Assigned to </th>
 			<th> Message </th>
@@ -25,8 +26,9 @@
 		<tbody>
 		{% for vm in voicemails.items %}
 		<tr>
-			<td> {{ vm.time }}</td>
-			<td> {{ vm.from_phone[0:3] + "-" + vm.from_phone[3:6] + "-" + vm.from_phone[6:] }}</td>
+			<td> {{loop.index}}</td>
+			<td style="min-width:150px"> {{ momentjs(vm.time).calendar() }}</td>
+			<td style="min-width:100px"> <a href="https://twilio.ehhapp.org/flashplayer?a={{ recordings_base+vm.message }}">{{ vm.from_phone[-10:-7] + "-" + vm.from_phone[-7:-4] + "-" + vm.from_phone[-4:] }}</a></td>
 			<td> {{ vm.intent }}</td>
 			<td> {{ vm.assigns }}</td>
 			<td> <audio controls preload="none" style="width:200px"> <source src="{{ recordings_base+vm.message }}" type="audio/wav"></audio></td>

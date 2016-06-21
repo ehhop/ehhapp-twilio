@@ -52,8 +52,8 @@ def googleOAuthTokenVerify():				# authenticate with Google for Icahn accounts
 		db_session.commit()
 		flask_login.login_user(user, remember=True)	# log them in in their browser
 	else:
-		if '@icahn.mssm.edu' not in useremail:	# not ISMMS account
-			return 'Unauthorized e-mail address. You must be a ISMMS student with an @icahn.mssm.edu address!'
+		if ('@icahn.mssm.edu' not in useremail) | ('@mssm.edu' not in useremail):	# not ISMMS account
+			return 'Unauthorized e-mail address. You must be a MSSM affiliate with an @icahn.mssm.edu or @mssm.edu address!'
 		else:
 			user = User(email = useremail, google_token=userid)	# create new user in DB
 			user.authenticated=True		# log them in in DB
@@ -152,7 +152,7 @@ def serve_assignment_admin(page=1):
 def serve_call_admin(page=1):
 	'''GUI: serve the call log page'''
 	# TODO: need to add pagination to this!!!
-        calls = Call.query.order_by(Call.id.desc()).paginate(page, 20, False)
+        calls = Call.query.order_by(Call.id).paginate(page, 20, False)
         return render_template("calls.html",
                                 calls = calls)
 
@@ -162,7 +162,7 @@ def serve_call_admin(page=1):
 def serve_vm_admin(page=1):
 	'''GUI: serve the voicemails page'''
 	# TODO: need to add pagination to this!!!
-        voicemails = Voicemail.query.order_by(Voicemail.id.desc()).paginate(page, 2000, False)
+        voicemails = Voicemail.query.order_by(Voicemail.id).paginate(page, 2000, False)
 	for vm in voicemails.items:
 		vm.intent = Intent.query.filter_by(digit=vm.intent).first().description
         return render_template("voicemails.html",
@@ -303,6 +303,20 @@ def test_intent(intent_id):
 			assignresult[pos].append([i, phone])
 		flash(pos + ": " + str(assignresult[pos]))
 	return redirect(url_for('serve_intent_admin'))
+
+@app.route('/intents/delete<int:intent_id>', methods=['GET'])
+@flask_login.login_required
+def delete_intent(intent_id):
+	'''GUI: delete an intent from the DB'''
+	record = Intent.query.get(intent_id)
+	if record == None:
+		flash('Could not find route in database.')
+		return redirect(url_for('serve_intent_admin'))
+	else:
+		flash('Route removed.')
+		db_session.delete(record)
+		db_session.commit()
+		return redirect(url_for('serve_intent_admin'))				
 
 ############# calls:funcs #############
 

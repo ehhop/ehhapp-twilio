@@ -91,26 +91,19 @@ def process_recording(recording_url, intent, ani, requireds=None, assign=None, n
 
 def send_email(recording_name, intent, ani, requireds, assign, app=app):
 	'''send an email to the required and assigned recipients'''
-	if app.debug==True:
-		requireds = ','.join(it_emails)
-		assign = ','.join(it_emails)
 	intent = str(intent)
 	# look for configuration variables in params.conf file...
 	msg = Message(sender=from_email)
 	description = Intent.query.filter_by(digit=intent).first().description
-	assign_names = ''
-	if assign == None:
-		msg.subject = 'EHHOP voicemail from ' + description + ", number " + ani
-	else:
-		assign_names = " and ".join([a.split('@')[0].replace("."," ").title() for a in assign.split(',')]) # fancy :)
-		msg.subject = assign_names + ' assigned EHHOP voicemail from ' + description + ", number " + ani
-		
+	assign_names = " and ".join([a.split('@')[0].replace("."," ").title() for a in assign.split(',')]) # fancy :)
+	msg.subject = assign_names + ' assigned EHHOP voicemail from ' + description + ", number " + ani		
 	msg.sender  = from_email
 	msg.recipients = assign.split(',') if ',' in assign else [assign]
 	msg.cc = requireds.split(',') if ',' in requireds else [requireds]
-	msg.html = render_template('email.html', from_phone = ani, assign_names = assign_names, 
+	with app.app_context():
+		msg.html = render_template('email.html', from_phone = ani, assign_names = assign_names, 
 					playback_url = player_url + recordings_base + recording_name, desc = description)
-	msg.body = render_template('email.txt', from_phone = ani, assign_names = assign_names, 
+		msg.body = render_template('email.txt', from_phone = ani, assign_names = assign_names, 
 					playback_url = player_url + recordings_base + recording_name, desc = description)
 	mail.send(msg)
 	return None

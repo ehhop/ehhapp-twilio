@@ -45,9 +45,10 @@
 			<td> {{ intent.description }}</td>
 			<td> {{ intent.required_recipients }}</td>
 			<td> {{ intent.distributed_recipients }}</td>
-			<td style="min-width:100px"> 
+			<td style="min-width:150px"> 
 			<a href="https://twilio.ehhapp.org/intents/edit{{ intent.id }}" class="btn btn-xs btn-primary" role="button">Edit</a> 
 			<a href="https://twilio.ehhapp.org/intents/test{{ intent.id }}" class="btn btn-xs btn-success" role="button">Test</a>
+			<a href="https://twilio.ehhapp.org/intents/delete{{ intent.id }}" class="btn btn-xs btn-danger" role="button">Delete</a>
 				</td>
 		</tr>
 		{% endfor %}			

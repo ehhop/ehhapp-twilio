@@ -12,6 +12,9 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.secret_key = flask_secret_key
 app.debug = True # THIS LOGS TO system when in debug, email in production (False)
 
+from .momentjs import momentjs
+app.jinja_env.globals['momentjs'] = momentjs
+
 mail = Mail(app)
 
 client = TwilioRestClient(twilio_AccountSID, twilio_AuthToken)

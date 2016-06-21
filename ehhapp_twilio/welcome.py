@@ -33,7 +33,7 @@ def hello_ehhop():
 			if (record.passcode != None) and (record.message !=None):
 				return redirect(url_for('secure_message_callback', remind_id = record.id)) # RE-RECORD ME
 	resp = twilio.twiml.Response()
-	with resp.gather(numDigits=1, action="/handle_key/hello", method="POST") as g:
+	with resp.gather(numDigits=1, action="/handle_key/hello", method="POST", finishOnKey="0") as g:
 		for i in range(0,3):
 			g.play("/assets/audio/welcome_greeting_ehhop.mp3")
 			g.pause(length=5)

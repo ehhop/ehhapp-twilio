@@ -24,7 +24,7 @@
 		{% for assign in assignments.items %}
 		<tr>
 			<th scope="row">{{ assign.id }}</th>
-			<td> {{ assign.from_phone }}</td>
+			<td> {{ assign.from_phone[0:3] + "-" + assign.from_phone[3:6] + "-" + assign.from_phone[6:] }}</td>
 			<td> {{ assign.recipients }}</td>
 			<td> 
 			<a href="https://twilio.ehhapp.org/assignments/edit{{ assign.id }}" class="btn btn-xs btn-primary" role="button">Edit</a> 

@@ -3,45 +3,21 @@ from ehhapp_twilio import *
 from ehhapp_twilio.database_helpers import *
 from ehhapp_twilio.backgroundtasks import *
 
-@app.route("/handle_key/sp/hello", methods=["GET", "POST"])
-def sp_handle_key_hello():
-	'''respond to initial direction'''
-	resp = twilio.twiml.Response()
-	digit = request.values.get('Digits', None)
-	#get day of week (0 is Monday and 6 is Sunday)
-	day_of_week = datetime.now(pytz.timezone('US/Eastern')).weekday()
-	if day_of_week == 1: # hack for tuesday clinic
-		day_of_week = 5	
-	if digit == '2':
-		'''instructions in spanish selected'''
-		if day_of_week == 5: #clinic is open on Saturdays
-			with resp.gather(numDigits=1, action="/handle_key/sp/clinic_open_menu", method="POST") as g:
-				# spanish: list options 1-4 similar to english
-				for i in range(0,3):
-					g.play('/assets/audio/sp_clinic_open_menu.mp3')
-					g.pause(length=5)
-		else: #clinic not open
-			with resp.gather(numDigits=1, action="/handle_key/sp/clinic_closed_menu", method="POST") as g:
-				# spanish: list options 2-4 similar to english
-				for i in range(0,3):
-					g.play('/assets/audio/sp_clinic_closed_menu.mp3')
-					g.pause(length=5)
-	elif digit == "3": 
-		'''extension feature'''
-		with resp.gather(numDigits=4, action="/dial_extension", method="POST") as g:
-			g.play('/assets/audio/pleasedial4digit_sp.mp3') # RE-RECORD!
-		
-	elif digit == '*':
-		'''auth menu'''
-		with resp.gather(numDigits=8, action='/auth_menu', method="POST") as g:
-			g.play('/assets/audio/enterpasscode.mp3') # this will remain english...
-	
-	else:
-		'''They have pressed an incorrect key.'''
-		resp.play('assets/audio/sp_incorrectkey.mp3')
-		resp.redirect('/sp/')
-	return str(resp)
-
+@app.route("/sp/new_established_menu", methods=["GET","POST"])
+def sp_new_established_menu():
+        '''respond to digit press when the clinic is open'''
+        resp = twilio.twiml.Response()
+        digit = request.values.get('Digits', None)                              # get keypress
+        if digit == "2":
+                resp.redirect("/sp/take_message/9")
+        elif digit == "3":
+                with resp.gather(numDigits=1, action="/handle_key/sp/clinic_open_menu", method="POST") as g:
+                        for i in range(0,3):
+                                g.play("/assets/audio/sp_clinic_open_menu.mp3")
+                                g.pause(length=5)
+        else:
+                resp.redirect('/sp/new_established_menu')
+        return str(resp)
 	
 @app.route("/handle_key/sp/clinic_open_menu", methods=["GET", "POST"])
 def sp_clinic_open_menu():
@@ -60,7 +36,7 @@ def sp_clinic_open_menu():
 	# appointment today
 	if digit == '1':
 		# now transferring your call
-		resp.play("/assets/audio/xfer_call_sp.mp3") # RE-RECORD
+		resp.play("/assets/audio/sp_xfer_call.mp3") # RE-RECORD
 		# dial current CM
 		resp.dial(oncall_current_phone)
 		# if the call fails
@@ -70,7 +46,7 @@ def sp_clinic_open_menu():
 				g.play("/assets/audio/sp_clinic_open_menu.mp3")
 				g.pause(length=5)
 	# not been here before
-	elif digit in ['2', '3', '4','5','6','7']:
+	elif digit in [str(i.digit) for i in models.Intent.query.all() if int(i.digit) >= 2]:
 		return redirect('/sp/take_message/' + digit)
 	# accidential key press
 	else:
@@ -87,7 +63,7 @@ def sp_clinic_closed_menu():
 	resp = twilio.twiml.Response()
 	intent = request.values.get('Digits', None)
 	
-	if intent in ['2','3','4','5','6','7']:
+	if intent in [str(i.digit) for i in models.Intent.query.all() if int(i.digit) >= 2]:
 		return redirect("/sp/take_message/" + intent)
 	else:
 		resp.play('/assets/audio/sp_incorrectkey.mp3') # RE-RECORD
@@ -110,17 +86,14 @@ def sp_take_message(intent):
 	else:
 		after_record = '/sp/handle_recording/' + str(intent)
 		
-	if intent == '3':
+	if intent == 9:
 		#Please leave a message for us after the tone. Make sure to let us know what times we can call you back. We will call you back as soon as possible.
-		resp.play("/assets/audio/sp_urgent_message.mp3")
+		resp.play("/assets/audio/sp_new_patient_options.mp3")
 	else:
 		#Please leave a message for us after the tone. Make sure to let us know what times we can call you back. We will call you back within one day.
 		resp.play("/assets/audio/sp_nonurgent_message.mp3")
 
-	
-
-	# after patient leaves message, direct them to next step
-	
+	# after patient leaves message, direct them to next step	
 	resp.record(maxLength=300, action=after_record, method="POST")
 	return str(resp)
 

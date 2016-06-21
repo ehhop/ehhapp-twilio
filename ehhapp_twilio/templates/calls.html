@@ -14,20 +14,20 @@
 	    <table class="table table-hover" id="activesort">
 		<thead>
 			<tr>
+			<th> # </th>
 			<th> Time </th>
 			<th> From </th>
 			<th> Duration (sec.) </th>
-			<th> Voicemail </th>
 			<th> Actions </th>
 			</tr>
 		</thead>
 		<tbody>
 		{% for call in calls.items %}
 		<tr>
-			<td> {{ call.time }}</td>
-			<td> {{ call.from_phone[2:5] + "-" + call.from_phone[5:8] + "-" + call.from_phone[8:] }}</td>
+			<td> {{loop.index}}</td>
+			<td> {{ momentjs(call.time).calendar() }}</td>
+			<td> {{ call.from_phone[-10:-7] + "-" + call.from_phone[-7:-4] + "-" + call.from_phone[-4:] }}</td>
 			<td> {{ call.duration }}</td>
-			<td> {% if call.voicemails|length != 0 %}{{ call.voicemails[0] }}{% else %}None{% endif %}</td>
 			<td> 
 			<a href="https://twilio.ehhapp.org/calls/delete{{call.id}}" class="btn btn-xs btn-danger" role="button">Delete</a>
 				</td>

@@ -9,59 +9,45 @@ def handle_key_hello():
 	resp = twilio.twiml.Response()
 	digit = request.values.get('Digits', None) 				# get digit pressed
 	day_of_week = datetime.now(pytz.timezone('US/Eastern')).weekday()	# get day of week (0 is Monday and 6 is Sunday)
-	if day_of_week == 1: #hack for tuesday clinic FIX TODO
-		day_of_week = 5
 	if digit == '1':						   	# pressed 1 - english
 		'''instructions in english selected'''
-		if day_of_week == 5: 						# clinic is open on Saturdays
-			with resp.gather(numDigits=1, action="/handle_key/clinic_open_menu", method="POST") as g:
-				#If you have an appointment today, please press 1. 
-				#If you have not been to EHHOP before, please press 2.
-				#If you are an EHHOP patient and have an urgent medical concern, please press 3.
-				#If you are an EHHOP patient and have a question about an upcoming appointment or medications, please press 4.
-				#If you are an EHHOP patient and would like to schedule an appointment with a specialist, opthamology, or dental, please press 5.
-				#If you are an EHHOP patient and have a question about a bill you received, please press 6.
-				#For all other non-urgent concerns, please press 7.
-				#To hear this menu again, stay on the line.
-				for i in range(0,3):
-					g.play("/assets/audio/clinic_open_menu.mp3")
-					g.pause(length=5)
-		else:								# clinic not open
-			with resp.gather(numDigits=1, action="/handle_key/clinic_closed_menu", method="POST") as g:
-				#If you have not been to EHHOP before, please press 2.
-				#If you are an EHHOP patient and have an urgent medical concern, please press 3.
-				#If you are an EHHOP patient and have a question about an upcoming appointment or medications, please press 4.
-				#If you are an EHHOP patient and would like to schedule an appointment with a specialist, opthamology, or dental, please press 5.
-				#If you are an EHHOP patient and have a question about a bill you received, please press 6.
-				#For all other non-urgent concerns, please press 7.
-				#To hear this menu again, stay on the line.
-				for i in range(0,3):
-					g.play("/assets/audio/clinic_closed_menu.mp3")
-					g.pause(length=5)
+		with resp.gather(numDigits=1, action="/new_established_menu", method="POST") as g:
+			for i in range(0,3):
+				g.play("/assets/audio/new_established_menu.mp3")
+				g.pause(length=5)
 	elif digit == '2':							# pressed 2 - spanish
 		'''instructions in spanish selected'''
-		resp.play('/assets/audio/sp_emerg_911.mp3')
-		if day_of_week == 5: 						# clinic is open on Saturdays
-			with resp.gather(numDigits=1, action="/handle_key/sp/clinic_open_menu", method="POST") as g:
-				for i in range(0,3):
-					g.play('/assets/audio/sp_clinic_open_menu.mp3')	# spanish: list options 1-7 similar to english
-					g.pause(length=5)
-		else: 								# clinic not open
-			with resp.gather(numDigits=1, action="/handle_key/sp/clinic_closed_menu", method="POST") as g:
-				for i in range(0,3):
-					g.play('/assets/audio/sp_clinic_closed_menu.mp3')# spanish: list options 2-7 similar to english
-					g.pause(length=5)
-	elif digit == "3": 							# dial extension feature
+		with resp.gather(numDigits=1, action="/sp/new_established_menu", method="POST") as g:
+			for i in range(0,3):
+				g.play('/assets/audio/sp_new_established_menu.mp3')	# spanish: list options 1-7 similar to english
+				g.pause(length=5)
+	elif digit == "#": 							# dial extension feature
 		with resp.gather(numDigits=4, action="/dial_extension", method="POST") as g:
 			g.play('/assets/audio/pleasedial4digit.mp3')
 	elif digit == '*':							# ehhop_members_path menu
 		with resp.gather(numDigits=8, action='/auth_menu', method="POST") as g:
 			g.play('/assets/audio/enterpasscode.mp3')
 	else:	
-		resp.play('assets/audio/incorrectkey.mp3')			# They have pressed an incorrect key.
+		resp.play('/assets/audio/incorrectkey.mp3')			# They have pressed an incorrect key.
 		resp.redirect('/')
 	return str(resp)							# Return response
 
+@app.route("/new_established_menu", methods=["GET","POST"])
+def new_established_menu():
+	'''respond to digit press when the clinic is open'''
+	resp = twilio.twiml.Response()
+	digit = request.values.get('Digits', None)				# get keypress
+	if digit == "2":
+		resp.redirect("/take_message/9")
+	elif digit == "3":
+		with resp.gather(numDigits=1, action="/handle_key/clinic_open_menu", method="POST") as g:
+                        for i in range(0,3):
+                                g.play("/assets/audio/clinic_open_menu.mp3")
+                                g.pause(length=5)
+	else:
+		resp.play('/assets/audio/incorrectkey.mp3')			# They have pressed an incorrect key.
+		resp.redirect('/new_established_menu')
+	return str(resp)		
 	
 @app.route("/handle_key/clinic_open_menu", methods=["GET", "POST"])
 def clinic_open_menu():
@@ -71,14 +57,14 @@ def clinic_open_menu():
 
 	oncall_current_phone = getOnCallPhoneNum()				# get the phone # of the on call - fallback if something wrong
 
-	if intent == '1':  							# appointment today
+	if intent == '1':  							# urgent concern
 		resp.play("/assets/audio/xfer_call.mp3")			# now transferring to oncall
-		resp.dial(oncall_current_phone)					# dial current CM
+		resp.dial(oncall_current_phone)					# dial current oncall TS
 		resp.play('/assets/audio/allbusy_trylater.mp3')			# if call fails (not picked up)
 		with resp.gather(numDigits=1, action="/handle_key/clinic_open_menu", method="POST") as g: 	# replay open menu after failure
 				g.play("/assets/audio/clinic_open_menu.mp3")
 				g.pause(length=5)
-	elif intent in ['2', '3', '4','5','6','7']:				# patient doesnt have appt today (everything else)
+	elif intent in [str(i.digit) for i in Intent.query.all() if int(i.digit) >= 2]:				# patient doesnt have appt today (everything else)
 		return redirect('/take_message/' + intent)			# take a message
 	else:									# accidental key press
 		resp.play('/assets/audio/incorrectkey.mp3')
@@ -94,7 +80,7 @@ def clinic_closed_menu():
 	resp = twilio.twiml.Response()
 	intent = request.values.get('Digits', None)				# get keypress
 	
-	if intent in ['2','3','4','5','6','7']:					# patient doesnt have appointment today
+	if intent in [i.digit for i in models.Intent.query.all() if int(i.digit) >= 2]:					# patient doesnt have appointment today
 		return redirect("/take_message/" + intent)			# take a message
 	else:									# presed incorrect key
 		resp.play('/assets/audio/incorrectkey.mp3')
@@ -115,10 +101,8 @@ def take_message(intent):
 	else:
 		after_record = '/handle_recording/' + str(intent)		# callback after VM left
 	
-	if intent == '3':							# urgent message
-		# Please leave a message for us after the tone. Make sure to let us know what 
-		# times we can call you back. We will call you back as soon as possible.
-		resp.play("/assets/audio/urgent_message.mp3")
+	if intent == 9:							# new patient options
+		resp.play("/assets/audio/new_patient_options.mp3")
 	else:									# non-urgent message
 		# Please leave a message for us after the tone. Make sure to let us know what 
 		# times we can call you back. We will call you back within one day.
