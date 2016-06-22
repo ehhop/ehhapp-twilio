@@ -30,7 +30,7 @@
 			<td style="min-width:150px"> {{ momentjs(vm.time).calendar() }}</td>
 			<td style="min-width:100px"> <a href="https://twilio.ehhapp.org/flashplayer?a={{ recordings_base+vm.message }}">{{ vm.from_phone[-10:-7] + "-" + vm.from_phone[-7:-4] + "-" + vm.from_phone[-4:] }}</a></td>
 			<td> {{ vm.intent }}</td>
-			<td> {{ vm.assigns }}</td>
+			<td style="max-width:240px; overflow-wrap:break-word"> {{ vm.assigns }}</td>
 			<td> <audio controls preload="none" style="width:200px"> <source src="{{ recordings_base+vm.message }}" type="audio/wav"></audio></td>
 			<td> 
 			<a href="https://twilio.ehhapp.org/voicemails/delete{{ vm.id }}" class="btn btn-xs btn-danger" role="button">Delete</a>

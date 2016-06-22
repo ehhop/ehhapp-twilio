@@ -101,7 +101,7 @@ def play_vm_recording():
 	# sterilize filename to prevent attacks
 	safe_char = re.compile(r'[^\w.]+') # only alphanumeric and periods
 	filename = safe_char.sub('', filename)
-	
+
 	def get_file(filename):						# how do we 'stream' the file from Box to browser? using a callback!
 		class VMFile:						# this will store the VM message as a 
   			def __init__(self):				# memory object instead of in a file (+ deleted after execution)
@@ -115,8 +115,8 @@ def play_vm_recording():
 		return v.data						# return the data put back together again to be sent to browser
 	
 	# serve file
-	return Response(get_file(filename), mimetype='audio/wav')	# return data to browser as a .wav file from the python object we made
-
+	return Response(get_file(filename))
+	
 ############ ADMIN PANEL indexes #############
 
 @app.route('/reminders', methods=['GET'])

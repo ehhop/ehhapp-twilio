@@ -56,18 +56,25 @@ def process_recording(recording_url, intent, ani, requireds=None, assign=None, n
 				sys.stderr.write(str(a) + str(satdate))
 				interresult = db.lookup_name_in_schedule(a, satdate)
 				sys.stderr.write(str(interresult))
+				emails = []
 				for i in interresult:
 					email = db.lookup_email_by_name(i)
 					sys.stderr.write(str(email))
-					assignlist.append(email) if email != None else None
+					emails.append(email) if email != None else None
+				assignlist.append(emails)
 			sys.stderr.write(str(assignlist))
-			counts = [Assignment.query.filter_by(recipients=a).count() for a in assignlist] # count number of people person has in workload
-			assign = assignlist[counts.index(min(counts))] if assignlist != [] else it_emails[0]
-				# gets whoever has the lowest load (alphabetical tiebreak)
-			# save the new assignment to the database for later retrieval
-			new_assign = Assignment(from_phone=ani[-10:], recipients=assign)
-			db_session.add(new_assign)
-			db_session.commit()
+			assign = []
+			for c in assignlist:			
+				c1 = [Assignment.query.filter_by(recipients=b).count() for b in c]
+				assign_person = c[c1.index(min(c1))] if c != [] else ""
+					# gets whoever has the lowest load (alphabetical tiebreak)
+					# save the new assignment to the database for later retrieval
+				if assign_person != "":
+					assign.append(assign_person)
+					new_assign = Assignment(from_phone=ani[-10:], recipients=assign_person)
+					db_session.add(new_assign)
+					db_session.commit()
+			assign = ", ".join(assign)
 	if requireds==None and not no_requireds:			# if no required recipients are sent and not a direct message
 		db_requireds = Intent.query.filter_by(digit=intent).first()
 		if db_requireds != None:
@@ -110,12 +117,12 @@ def send_email(recording_name, intent, ani, requireds, assign, app=app):
 
 def save_file(recording_url, auth_method):
 	'''save a VM from twilio, pick a random name'''
-	save_name = randomword(64) + ".wav" # take regular name and salt it
+	save_name = randomword(64) + ".mp3" # take regular name and salt it
 										# we are now using HTTPS basic auth to do the downloads
 										# step 0 - open up a FTP session with HIPAA box
 	session = FTP_TLS('ftp.box.com', box_username, box_password)
 										# step 1 - open a request to get the voicemail using a secure channel with Twilio
-	response = requests.get(recording_url, stream=True, auth=auth_method) 	# no data has been downloaded yet (just headers)
+	response = requests.get(recording_url+".mp3", stream=True, auth=auth_method) 	# no data has been downloaded yet (just headers)
 										# step 2 - read the response object in chunks and write it to the HIPAA box directly
 	session.storbinary('STOR recordings/' + save_name, response.raw)
 										# step 3 - cleanup

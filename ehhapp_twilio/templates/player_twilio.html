@@ -7,7 +7,45 @@
   <meta name="google-signin-scope" content="profile email">
   <meta name="google-signin-client_id" content="{{ vm_client_id }}">
   <script src="https://apis.google.com/js/platform.js" async defer></script>
+  <link rel="stylesheet" type="text/css" href="assets/sm2/360player.css" />
+
+  <!-- special IE-only canvas fix -->
+  <!--[if IE]><script type="text/javascript" src="assets/sm2/excanvas.js"></script><![endif]-->
+
+  <!-- Apache-licensed animation library -->
+  <script type="text/javascript" src="assets/sm2/berniecode-animator.js"></script>
+
+  <!-- the core stuff -->
+  <script type="text/javascript" src="assets/sm2/soundmanager2.min.js"></script>
+  <script type="text/javascript" src="assets/sm2/360player.js"></script>
+
+  <script type="text/javascript">
+  soundManager.setup({
+    // path to directory containing SM2 SWF
+    url: 'assets/sm2/'
+  });
   
+  threeSixtyPlayer.config.scaleFont = (navigator.userAgent.match(/msie/i)?false:true);
+  threeSixtyPlayer.config.showHMSTime = true;
+
+  // enable this in SM2 as well, as needed
+
+  if (threeSixtyPlayer.config.useWaveformData) {
+    soundManager.flash9Options.useWaveformData = true;
+  }
+  if (threeSixtyPlayer.config.useEQData) {
+    soundManager.flash9Options.useEQData = true;
+  }
+  if (threeSixtyPlayer.config.usePeakData) {
+    soundManager.flash9Options.usePeakData = true;
+  }
+
+  if (threeSixtyPlayer.config.useWaveformData || threeSixtyPlayer.flash9Options.useEQData || threeSixtyPlayer.flash9Options.usePeakData) {
+    // even if HTML5 supports MP3, prefer flash so the visualization features can be used.
+    soundManager.preferFlash = true;
+  }
+  
+  </script>
 </head>
 <body>
   <div class="container" style="width:100%; height:100%;font-family:sans-serif">
@@ -57,12 +95,13 @@
 	 <p style="font-size:12px;text-align:center" id="curuser">Not logged in. | <a href="#" onclick="signOut();">Retry</a></p>
 	 {% endif %}
 	 <h2 style="text-align:center">Voicemail message</h2>
-	 <div><audio controls style="width:100%">
-		 <source src="{{ audio_url }}">
-	       <p style="text-align:center">If you encounter issues, try the <a href="{{ audio_url }}">direct link.</a></p>
-	      </audio>
-	 </div>
+<div class="player-container" style="display:block; margin: 0 auto" id="player2">
+    <div class="ui360 ui360-vis">
+      <a href="{{audio_url}}">Voicemail message</a>
     </div>
+    <div class="instructions">Click the play button to start listening.</div>
+    </div>
+</div>
   </div>
 </body>
 </html>
