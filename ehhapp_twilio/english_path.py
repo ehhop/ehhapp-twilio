@@ -108,7 +108,7 @@ def take_message(intent):
 		# times we can call you back. We will call you back within one day.
 		resp.play("/assets/audio/nonurgent_message.mp3")
 
-	resp.play("/assets/audio/vm_instructions.mp3")				# additional instructions 
+	#resp.play("/assets/audio/vm_instructions.mp3")				# additional instructions 
 										### - merge this with ones above!
 	resp.record(maxLength=300, action=after_record, method="POST")		# after patient leaves message, direct them to next step
 	return str(resp)							# return response
