@@ -7,11 +7,14 @@ This provides TwiML to a Twilio app. Phone tree greetings are in the `assets` di
 You can test the setup by calling the demo number set up at 862-242-5952.
 
 9/4/2015: All paths have been enabled but there may still be some bugs.
+
 2/8/2016: Left TODOS:
 * DEBUG all the things
 * test for secure message delivery flow
 * improve options to reach a live person (who to call? queue?)
 * secure message delivery needs to have options for X hours instead of next day, call back every day at same time if not delivered
+
+6/21/16: See ehhapp-twilio/issues for up-to-date TODOs.
 
 ## Deployment Details
 
