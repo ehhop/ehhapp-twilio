@@ -115,7 +115,12 @@ def play_vm_recording():
 		return v.data						# return the data put back together again to be sent to browser
 	
 	# serve file
-	return Response(get_file(filename))
+	if filename[-3:]=="mp3":
+		return Response(get_file(filename), mimetype="audio/mpeg", status=200)
+	elif filename[-3:]=="wav":
+		return Response(get_file(filename), mimetype="audio/wav", status=200)
+	else:
+		return Response(get_file(filename), status=200)
 	
 ############ ADMIN PANEL indexes #############
 
@@ -152,7 +157,7 @@ def serve_assignment_admin(page=1):
 def serve_call_admin(page=1):
 	'''GUI: serve the call log page'''
 	# TODO: need to add pagination to this!!!
-        calls = Call.query.order_by(Call.id).paginate(page, 20, False)
+        calls = Call.query.order_by(Call.id).paginate(page, 2000, False)
         return render_template("calls.html",
                                 calls = calls)
 
