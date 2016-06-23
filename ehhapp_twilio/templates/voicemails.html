@@ -20,7 +20,7 @@
 			<th> Intent </th>
 			<th> Assigned to </th>
 			<th> Message </th>
-			<th> Actions </th>
+			{% if current_user.email =="ryan.neff@icahn.mssm.edu" %}<th> Actions </th>{% endif %}
 			</tr>
 		</thead>
 		<tbody>
@@ -32,9 +32,10 @@
 			<td> {{ vm.intent }}</td>
 			<td style="max-width:240px; overflow-wrap:break-word"> {{ vm.assigns }}</td>
 			<td> <audio controls preload="none" style="width:200px"> <source src="{{ recordings_base+vm.message }}" type="audio/{% if vm.message[-3:]=="mp3" %}mpeg{% else %}wav{% endif %}"></audio></td>
-			<td> 
+{% if current_user.email =="ryan.neff@icahn.mssm.edu" %}			<td> 
 			<a href="https://twilio.ehhapp.org/voicemails/delete{{ vm.id }}" class="btn btn-xs btn-danger" role="button">Delete</a>
 				</td>
+{% endif %}
 		</tr>
 		{% endfor %}			
 		</tbody>

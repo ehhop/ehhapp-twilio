@@ -82,10 +82,19 @@ def process_recording(recording_url, intent, ani, requireds=None, assign=None, n
 			requirelist = []
 			for r in requiredpos:
 				r = r.strip(" ")
-				lookup = db.lookup_name_by_position(r)
-				if lookup != []:
-					for rr in lookup:
-						requirelist.append(rr[2])
+				if "schedule:" in r.lower():
+					a = r.split(":")[1].strip()
+					interresult = db.lookup_name_in_schedule(a, satdate)
+	                                sys.stderr.write(str(interresult))
+                	                for i in interresult:
+                        	                email = db.lookup_email_by_name(i)
+                                	        sys.stderr.write(str(email))
+                                        	requirelist.append(email) if email != None else None
+				else:
+					lookup = db.lookup_name_by_position(r)
+					if lookup != []:
+						for rr in lookup:
+							requirelist.append(rr[2])
 			requireds = ','.join(requirelist)
 		requireds = fallback_email if requireds==None else requireds # in case something goes bad
 	if no_requireds:						# if a direct VM (dial_extension)

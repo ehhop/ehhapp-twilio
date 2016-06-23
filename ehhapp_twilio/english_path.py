@@ -8,7 +8,6 @@ def handle_key_hello():
 	'''respond to initial direction from the welcome greeting (1st menu)'''
 	resp = twilio.twiml.Response()
 	digit = request.values.get('Digits', None) 				# get digit pressed
-	day_of_week = datetime.now(pytz.timezone('US/Eastern')).weekday()	# get day of week (0 is Monday and 6 is Sunday)
 	if digit == '1':						   	# pressed 1 - english
 		'''instructions in english selected'''
 		with resp.gather(numDigits=1, action="/new_established_menu", method="POST") as g:
@@ -37,13 +36,20 @@ def new_established_menu():
 	'''respond to digit press when the clinic is open'''
 	resp = twilio.twiml.Response()
 	digit = request.values.get('Digits', None)				# get keypress
+	day_of_week = datetime.now(pytz.timezone('US/Eastern')).weekday()	# get day of week (0 is Monday and 6 is Sunday)
 	if digit == "2":
 		resp.redirect("/take_message/9")
 	elif digit == "3":
-		with resp.gather(numDigits=1, action="/handle_key/clinic_open_menu", method="POST") as g:
-                        for i in range(0,3):
-                                g.play("/assets/audio/clinic_open_menu.mp3")
-                                g.pause(length=5)
+		if day_of_week == 5:
+			with resp.gather(numDigits=1, action="/handle_key/clinic_open_menu", method="POST") as g:
+        	                for i in range(0,3):
+                	                g.play("/assets/audio/clinic_open_menu.mp3")
+                        	        g.pause(length=5)
+		else:
+			with resp.gather(numDigits=1, action="/handle_key/clinic_closed_menu", method="POST") as g:
+        	                for i in range(0,3):
+                	                g.play("/assets/audio/clinic_open_menu.mp3")
+                        	        g.pause(length=5)
 	else:
 		resp.play('/assets/audio/incorrectkey.mp3')			# They have pressed an incorrect key.
 		resp.redirect('/new_established_menu')
@@ -80,13 +86,13 @@ def clinic_closed_menu():
 	resp = twilio.twiml.Response()
 	intent = request.values.get('Digits', None)				# get keypress
 	
-	if intent in [i.digit for i in models.Intent.query.all() if int(i.digit) >= 2]:					# patient doesnt have appointment today
+	if intent in [i.digit for i in models.Intent.query.all() if int(i.digit) >= 0]:					# patient doesnt have appointment today
 		return redirect("/take_message/" + intent)			# take a message
 	else:									# presed incorrect key
 		resp.play('/assets/audio/incorrectkey.mp3')
 		resp.pause(length=3)
 		with resp.gather(numDigits=1, action="/handle_key/clinic_closed_menu", method="POST") as g: 	#replay closed menu
-			g.play("/assets/audio/clinic_closed_menu.mp3")
+			g.play("/assets/audio/clinic_open_menu.mp3")
 			g.pause(length=5)
 	return str(resp)							# return response
 	

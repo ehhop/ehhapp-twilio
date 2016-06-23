@@ -18,7 +18,7 @@
 			<th> Time </th>
 			<th> From </th>
 			<th> Duration (sec.) </th>
-			<th> Actions </th>
+			{% if current_user.email =="ryan.neff@icahn.mssm.edu" %}<th> Actions </th>{% endif %}
 			</tr>
 		</thead>
 		<tbody>
@@ -28,9 +28,11 @@
 			<td> {{ momentjs(call.time).calendar() }}</td>
 			<td> {{ call.from_phone[-10:-7] + "-" + call.from_phone[-7:-4] + "-" + call.from_phone[-4:] }}</td>
 			<td> {{ call.duration }}</td>
+			{% if current_user.email =="ryan.neff@icahn.mssm.edu" %}
 			<td> 
 			<a href="https://twilio.ehhapp.org/calls/delete{{call.id}}" class="btn btn-xs btn-danger" role="button">Delete</a>
 				</td>
+			{% endif %}
 		</tr>
 		{% endfor %}			
 		</tbody>

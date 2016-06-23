@@ -8,13 +8,20 @@ def sp_new_established_menu():
         '''respond to digit press when the clinic is open'''
         resp = twilio.twiml.Response()
         digit = request.values.get('Digits', None)                              # get keypress
+        day_of_week = datetime.now(pytz.timezone('US/Eastern')).weekday()       # get day of week (0 is Monday and 6 is Sunday)
         if digit == "2":
                 resp.redirect("/sp/take_message/9")
         elif digit == "3":
-                with resp.gather(numDigits=1, action="/handle_key/sp/clinic_open_menu", method="POST") as g:
-                        for i in range(0,3):
-                                g.play("/assets/audio/sp_clinic_open_menu.mp3")
-                                g.pause(length=5)
+		if day_of_week == 5:
+	                with resp.gather(numDigits=1, action="/handle_key/sp/clinic_open_menu", method="POST") as g:
+        	                for i in range(0,3):
+                	                g.play("/assets/audio/sp_clinic_open_menu.mp3")
+                        	        g.pause(length=5)
+		else:
+	                with resp.gather(numDigits=1, action="/handle_key/sp/clinic_closed_menu", method="POST") as g:
+        	                for i in range(0,3):
+                	                g.play("/assets/audio/sp_clinic_open_menu.mp3")
+                        	        g.pause(length=5)
         else:
                 resp.redirect('/sp/new_established_menu')
         return str(resp)
@@ -63,13 +70,13 @@ def sp_clinic_closed_menu():
 	resp = twilio.twiml.Response()
 	intent = request.values.get('Digits', None)
 	
-	if intent in [str(i.digit) for i in models.Intent.query.all() if int(i.digit) >= 2]:
+	if intent in [str(i.digit) for i in models.Intent.query.all() if int(i.digit) >= 0]:
 		return redirect("/sp/take_message/" + intent)
 	else:
 		resp.play('/assets/audio/sp_incorrectkey.mp3') # RE-RECORD
 		resp.pause(length=3)
 		with resp.gather(numDigits=1, action="/handle_key/sp/clinic_closed_menu", method="POST") as g: 
-			g.play("/assets/audio/sp_clinic_closed_menu.mp3") # RE-RECORD
+			g.play("/assets/audio/sp_clinic_open_menu.mp3") # RE-RECORD
 			g.pause(length=5)
 	return str(resp)
 	
