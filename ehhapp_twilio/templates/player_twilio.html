@@ -6,7 +6,6 @@
   <!-- Google Sign in for authentication -->
   <meta name="google-signin-scope" content="profile email">
   <meta name="google-signin-client_id" content="{{ vm_client_id }}">
-  <script src="https://apis.google.com/js/platform.js" async defer></script>
   <link rel="stylesheet" type="text/css" href="assets/sm2/360player.css" />
 
   <!-- special IE-only canvas fix -->
@@ -51,7 +50,7 @@
   <div class="container" style="width:100%; height:100%;font-family:sans-serif">
   <div id="signin1" style="height:100px; width:30%; min-width:300px;margin: 0 auto; text-align:center; display:block"><h2>Please sign in to view your voicemail</h2></div>
   <div id="signin2" style="width:120px;margin: 0 auto; display:block">
-	<div class="g-signin2" data-onsuccess="onSignIn" data-theme="light"></div>
+	<div id="my-signin2" data-onsuccess="onSignIn" data-theme="light"></div>
   </div>
     <script>
       function onSignIn(googleUser) {
@@ -88,6 +87,25 @@
 			      });
 			        }
 </script>
+    <script>
+    function onFailure(error) {
+      console.log(error);
+    }
+    function renderButton() {
+      gapi.signin2.render('my-signin2', {
+        'scope': 'profile email',
+        'prompt': 'select_account',
+        'width': 120,
+        'height': 50,
+        'longtitle': false,
+        'theme': 'light',
+        'onsuccess': onSignIn,
+        'onfailure': onFailure,
+      });
+    }
+  </script>
+  <script src="https://apis.google.com/js/platform.js?onload=renderButton" async defer></script>
+
   <div class="player-container" style="display:none; width:30%; min-width:300px; margin: 0 auto" id="player1">
 	 {% if current_user.is_authenticated %}
 	 <p style="font-size:10px;text-align:center" id="curuser">Logged in as: {{ current_user.email }} | <a href="#" onclick="signOut();">Log out</a></p>
@@ -99,7 +117,9 @@
     <div class="ui360 ui360-vis">
       <a href="{{audio_url}}">Voicemail message</a>
     </div>
-    <div class="instructions">Click the play button to start listening.</div>
+    <div class="instructions">Click the play button to start listening.
+    <p><a href="/voicemails"><h3>Listen to other voicemails »</h3></a>	
+    </div>
     </div>
 </div>
   </div>
