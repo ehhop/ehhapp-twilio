@@ -11,7 +11,7 @@ from oauth2client import crypt
 from ftplib import FTP_TLS
 from flask import flash
 
-import pytz, os, shutil, random, string
+import pytz, os, shutil, random, string, sys
 from datetime import datetime, timedelta
 
 ############# logins ############
@@ -41,10 +41,12 @@ def googleOAuthTokenVerify():				# authenticate with Google for Icahn accounts
 			raise crypt.AppIdentityError("Wrong issuer.")
 	except crypt.AppIdentityError:
 		# Invalid token
+		sys.stderr.write("Bad token from client.\n")
 		return None
 							# okay, now we're logged in. yay!
 	userid = idinfo['sub']
 	useremail = idinfo['email']
+	sys.stderr.write("Token sign in user: " + ", ".join([useremail, userid]) + "\n")
 	user = User.query.get(useremail)
 	if user:					# if user has been here before
 		user.authenticated=True			# log them in in DB
@@ -52,7 +54,7 @@ def googleOAuthTokenVerify():				# authenticate with Google for Icahn accounts
 		db_session.commit()
 		flask_login.login_user(user, remember=True)	# log them in in their browser
 	else:
-		if ('@icahn.mssm.edu' not in useremail) | ('@mssm.edu' not in useremail):	# not ISMMS account
+		if ('@icahn.mssm.edu' not in useremail) & ('@mssm.edu' not in useremail):	# not ISMMS account
 			return 'Unauthorized e-mail address. You must be a MSSM affiliate with an @icahn.mssm.edu or @mssm.edu address!'
 		else:
 			user = User(email = useremail, google_token=userid)	# create new user in DB
