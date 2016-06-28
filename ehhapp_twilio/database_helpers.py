@@ -54,7 +54,7 @@ class EHHOPdb:							# our Google Drive database
 		return None # if no return
 
 	def lookup_name_in_schedule(self, person_type, lookup_date):
-		# get a name based on the posiiton title in the schedule
+		# get a name based on the position title in the schedule
 		if (person_type == '') | (person_type==None):
 			return []
 		keys = [i for i in self.schedule[0].keys() if person_type.lower() in i.lower()]
