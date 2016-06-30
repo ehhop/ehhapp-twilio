@@ -26,3 +26,9 @@ To really run this thing you'll want the following resources in your infrastruct
 * Box
 * sqllite
 * redis
+
+## Contributing
+
+To run it on localhost use:
+
+`python run.py`
