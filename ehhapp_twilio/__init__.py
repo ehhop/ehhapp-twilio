@@ -7,7 +7,7 @@ from flask.ext.mail import Mail
 
 #Flask init
 app = Flask(__name__, static_folder='')
-app.config['SQLALCHEMY_DATABASE_URI'] = sqlalchemy_db # where is sqlalchemy_db defined?
+app.config['SQLALCHEMY_DATABASE_URI'] = sqlalchemy_db
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.secret_key = flask_secret_key
 app.debug = True # THIS LOGS TO system when in debug, email in production (False)
