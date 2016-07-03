@@ -17,7 +17,9 @@ To really run this thing you'll want the following resources in your infrastruct
 
 ## Read the Documentation
 
-We use Sphinx. To build the documentation, navigate into the docs directory, and run `sphinx-build -b html . ./build` where '.' and './build' are the source directory (where all the rst files are) and the build directory (where the html ends up) respectively.
+We use Sphinx. To build the documentation, navigate into the docs directory, and run `sphinx-build -b html _src _build` where '\_src' and '\_build' are the source directory (where all the rst files are) and the build directory (where the html ends up) respectively.
+
+If you have `make`, just `make html`.
 
 ## Contributing
 
