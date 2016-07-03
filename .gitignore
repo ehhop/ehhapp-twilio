@@ -7,3 +7,6 @@ celeryconfig.py
 *.swp
 *.tsv
 *.db
+
+# docs
+docs/_build
