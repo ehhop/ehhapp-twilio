@@ -86,7 +86,7 @@ def clinic_closed_menu():
 	resp = twilio.twiml.Response()
 	intent = request.values.get('Digits', None)				# get keypress
 	
-	if intent in [i.digit for i in models.Intent.query.all() if int(i.digit) >= 0]:					# patient doesnt have appointment today
+	if intent in [str(i.digit) for i in models.Intent.query.all() if int(i.digit) >= 0]:					# patient doesnt have appointment today
 		return redirect("/take_message/" + intent)			# take a message
 	else:									# presed incorrect key
 		resp.play('/assets/audio/incorrectkey.mp3')
