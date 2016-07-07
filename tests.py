@@ -1,4 +1,4 @@
-!/usr/bin/python 
+#!/usr/bin/python 
 
 import ehhapp_twilio
 from ehhapp_twilio.config import *
