@@ -63,4 +63,5 @@ To run it on localhost use:
 
 <!-- Links -->
 [pyenv]: https://github.com/yyuu/pyenv
-
+[pytest]: http://pytest.org/latest/
+[nose]: http://nose.readthedocs.io/en/latest/
