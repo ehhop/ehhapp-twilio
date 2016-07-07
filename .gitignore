@@ -10,3 +10,6 @@ celeryconfig.py
 
 # docs
 docs/_build
+
+# pytest
+.cache
