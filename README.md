@@ -27,6 +27,10 @@ Packages can and should be isolated from system site-packages in a virtualenv. R
 
 We use the `requirements.txt` file to specify required packages. Run `pip install -r requirements.txt` to get what you need.
 
+## Run Tests
+
+Test are currently written in full-blow `unittest` syntax. Our CI tool will run `py.test tests.py`. Why have we chosen [pytest][pytest] over [nose][nose]? It "feels" better maintained.
+
 ## Read the Documentation
 
 We use Sphinx. To build the documentation, navigate into the docs directory, and run `sphinx-build -b html _src _build` where '\_src' and '\_build' are the source directory (where all the rst files are) and the build directory (where the html ends up) respectively.
