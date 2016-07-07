@@ -15,6 +15,10 @@ To really run this thing you'll want the following resources in your infrastruct
 * sqllite
 * redis
 
+## Python Version
+
+This was developed on a Debian 7 server running default system Python 2.7.3. It is recommended that anyone contributing to this codebase use [pyenv][pyenv] to manage different python versions. Until tests are written verifying compatability across different python versions, the `.python-version` file specifies which version this code is intended to run under.
+
 ## Read the Documentation
 
 We use Sphinx. To build the documentation, navigate into the docs directory, and run `sphinx-build -b html _src _build` where '\_src' and '\_build' are the source directory (where all the rst files are) and the build directory (where the html ends up) respectively.
@@ -40,3 +44,9 @@ You can test the setup by calling the demo number set up at 862-242-5952.
 To run it on localhost use:
 
 `python run.py`
+
+---
+
+<!-- Links -->
+[pyenv]: https://github.com/yyuu/pyenv
+
