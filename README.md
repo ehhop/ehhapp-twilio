@@ -19,6 +19,14 @@ To really run this thing you'll want the following resources in your infrastruct
 
 This was developed on a Debian 7 server using Python 2.7.11 packages. It is recommended that anyone contributing to this codebase use [pyenv][pyenv] to manage different python versions. Until tests are written verifying compatability across different python versions, the `.python-version` file specifies which version this code is intended to run under.
 
+## Virtualenv
+
+Packages can and should be isolated from system site-packages in a virtualenv. Run `virtualenv venv` and then `source venv/bin/activate` before doing anything else.
+
+## Dependencies
+
+We use the `requirements.txt` file to specify required packages. Run `pip install -r requirements.txt` to get what you need.
+
 ## Read the Documentation
 
 We use Sphinx. To build the documentation, navigate into the docs directory, and run `sphinx-build -b html _src _build` where '\_src' and '\_build' are the source directory (where all the rst files are) and the build directory (where the html ends up) respectively.
