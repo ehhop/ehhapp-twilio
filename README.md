@@ -17,7 +17,7 @@ To really run this thing you'll want the following resources in your infrastruct
 
 ## Python Version
 
-This was developed on a Debian 7 server running default system Python 2.7.3. It is recommended that anyone contributing to this codebase use [pyenv][pyenv] to manage different python versions. Until tests are written verifying compatability across different python versions, the `.python-version` file specifies which version this code is intended to run under.
+This was developed on a Debian 7 server using Python 2.7.11 packages. It is recommended that anyone contributing to this codebase use [pyenv][pyenv] to manage different python versions. Until tests are written verifying compatability across different python versions, the `.python-version` file specifies which version this code is intended to run under.
 
 ## Read the Documentation
 
