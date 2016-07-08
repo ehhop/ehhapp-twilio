@@ -2,7 +2,6 @@ venv
 *.pyc
 *.conf
 *.json
-config.py
 celeryconfig.py
 *.swp
 *.tsv

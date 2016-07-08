@@ -1,14 +1,30 @@
 #!/usr/bin/env python
 import sys, os
-import site
-site.addsitedir('/var/wsgiapps/ehhapp_twilio/venv/lib/python2.7/site-packages')
 
-PROJECT_DIR = '/var/wsgiapps/ehhapp_twilio/'
-sys.path.append(PROJECT_DIR)
-sys.path.append(PROJECT_DIR + '/venv')
+# default config
 
-activate_this = os.path.expanduser('/var/wsgiapps/ehhapp_twilio/venv/bin/activate_this.py')
-execfile(activate_this, dict(__file__=activate_this))
+sqlalchemy_db = 'sqlite:///:memory:'  # __init__.py:10
+flask_secret_key = 'chicken'          # __init__.py:12
+twilio_AccountSID = 'beef'            # __init__.py:20
+twilio_AuthToken = 'steak'            # __init__.py:20
+
+names_filename = 'names_filename'       # database_helpers.py:8
+schedule_filename = 'schedule_filename' # database_helpers.py:8
+
+slack_user = 'slack_user'             # webhooks.py:4
+slack_icon = 'slack_icon'             # webhooks.py:4
+slack_channel = 'slack_channel'       # webhooks.py:4
+hookurl = 'https://hookurl'           # webhooks.py:4
+
+# import site
+# site.addsitedir('/var/wsgiapps/ehhapp_twilio/venv/lib/python2.7/site-packages')
+
+# PROJECT_DIR = '/var/wsgiapps/ehhapp_twilio/'
+# sys.path.append(PROJECT_DIR)
+# sys.path.append(PROJECT_DIR + '/venv')
+
+# activate_this = os.path.expanduser('/var/wsgiapps/ehhapp_twilio/venv/bin/activate_this.py')
+# execfile(activate_this, dict(__file__=activate_this))
 
 #--------------------------#
 # OFFSITE CONFIG VARIABLES #
@@ -76,6 +92,7 @@ from ftplib import FTP_TLS
 
 box_username = ""
 box_password = ""
+got_box_credentials = bool(box_username and box_password)
 
 class ConfigFile:
         def __init__(self):
@@ -83,7 +100,10 @@ class ConfigFile:
         def __call__(self,s):
                 self.data += s + '\n'
 c = ConfigFile()
-session = FTP_TLS('ftp.box.com', box_username, box_password)
-status = session.retrlines('RETR server/config.py', c) # retrieve config params from offsite
-exec c.data
+
+# only authenticate with Box if credentials are non-empty strings
+if got_box_credentials:
+    session = FTP_TLS('ftp.box.com', box_username, box_password)
+    status = session.retrlines('RETR server/config.py', c) # retrieve config params from offsite
+    exec c.data
 
