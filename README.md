@@ -45,7 +45,7 @@ We use the `requirements.txt` file to specify required packages. Run `pip instal
 
 ### Run Tests
 
-Test are currently written in full-blow `unittest` syntax. Our CI tool will run `py.test tests.py`. Why have we chosen [pytest][pytest] over [nose][nose]? It "feels" better maintained.
+Test are currently written in full-blown `unittest` syntax. Our CI tool will run `py.test tests.py`. Why have we chosen [pytest][pytest] over [nose][nose]? It "feels" better maintained.
 
 ### Read the Documentation
 
