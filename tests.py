@@ -12,8 +12,9 @@ A few parts:
 import urllib2, time, os
 
 # Deployment Environment
-def test_redis_is_running(self):
+def test_redis_is_running():
 	print "checking if redis is running... "
+        redis_pass = 'redis_pass'
 	result = os.popen("redis-cli -a " + redis_pass + " ping").read()
 	assert "PONG" in result
 
