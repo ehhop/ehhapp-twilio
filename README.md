@@ -53,6 +53,20 @@ We use Sphinx. To build the documentation, navigate into the docs directory, and
 
 If you have `make`, just `make html`.
 
+### Write the Documentation
+
+Contribute! To automate `make html` whenever you contribute to the documentation, use the [entr][entr] utility. 
+
+`ls -d _src/* | entr make html`
+
+It watches for changes to the \_src/ directory, and automatically runs `make html` as files change.
+
+To save you the headache of having to refresh the browser window you have open to the docs, you can also run in a different pane:
+
+`ls -d _build/html/*.html | entr reload-browser $BROWSER_OF_CHOICE`
+
+This sends a key-press to the browser and will refresh whatever the active tab is. This assumes the tab is open to wherever you are hosting the docs (usually localhost:8000 if you are using a Python's built-in `SimpleHTTPServer`).
+
 ### Launch It
 
 To run it on localhost use:
