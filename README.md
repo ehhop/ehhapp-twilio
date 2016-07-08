@@ -1,3 +1,5 @@
+[![CircleCI](https://circleci.com/gh/ehhop/ehhapp-twilio/tree/master.svg?style=svg)](https://circleci.com/gh/ehhop/ehhapp-twilio/tree/master)
+
 # ehhapp-twilio
 
 twilio implementation of the EHHOP-phone tree
@@ -61,4 +63,5 @@ To run it on localhost use:
 
 <!-- Links -->
 [pyenv]: https://github.com/yyuu/pyenv
-
+[pytest]: http://pytest.org/latest/
+[nose]: http://nose.readthedocs.io/en/latest/
