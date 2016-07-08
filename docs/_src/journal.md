@@ -1,6 +1,4 @@
-#######
-Journal
-#######
+# Journal
 
 Circle CI automatically spins up an Ubuntu 14.04 box that clones our repo, installs a virtualenv, reads our requirements.txt, and then executes a command to run some tests. We can configure almost any step of this process through the admin dashboard and a circle.yml file.
 
