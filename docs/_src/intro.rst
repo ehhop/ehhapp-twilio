@@ -70,6 +70,20 @@ big players: Pinterest, Twilio, LinkedIn to name a few.
 
 Responses to Twilio requests are in TwiML, proprietary XML that tells 
 Twilio what to do (e.g. present a menu of options, take voicemail, send 
-keypresses, etc.).
+keypad input, etc.). `See Twilio Docs`_
+
+.. _See Twilio Docs: https://www.twilio.com/docs/api/twiml/twilio_request
 
 *If your eyes are glazing over right now, you need an intro to the fundamentals of web programming (see above).*
+
+Using TwiML we can get Twilio to record voicemails and securely send the audio 
+to a data store with strict access control. This is the technical part of 
+HIPAA compliance. For us, this safe place is Box.
+
+To make it possible for EHHOP volunteers to receive voicemail notifications 
+and have the ability to listen to audio we need to a reference a Google Sheet 
+with volunteer on-call schedules and contact info.
+
+Finally, to authenticate would-be listeners to the audio, they must provide 
+valid Google Account credentials according to OAuth 2.0 protocol.
+
