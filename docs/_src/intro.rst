@@ -3,4 +3,5 @@
 Intro
 #####
 
-This is the intro.
+Welcome. Let this be your guide to Python and Twilio app maintenance.
+
