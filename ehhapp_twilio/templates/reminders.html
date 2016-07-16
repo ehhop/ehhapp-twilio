@@ -46,7 +46,11 @@
 			<td> {{ remind.from_phone }}</td>
 			<td> {{ "Delivered" if remind.delivered else "Scheduled" }}</td>
 			<td> {{ remind.time }}</td>
+			{% if remind.message != None %}
 			<td> <audio controls preload="none"> <source src="{{ remind.message }}" type="audio/{% if remind.message[-3:]=="mp3" %}mpeg{% else %}wav{% endif %}"></audio></td>
+			{% else %}
+			<td> No audio :( </td>
+			{% endif %}
 			<td> <a href="https://twilio.ehhapp.org/reminders/{{ remind.id }}/delete" onClick="return confirm(\'Are you sure?\')">Delete</a></td>
 		</tr>
 		{% endfor %}			

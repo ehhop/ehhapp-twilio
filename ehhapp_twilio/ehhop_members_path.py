@@ -164,7 +164,7 @@ def secure_message_setmessage(remind_id):				# fourth step in secure message - r
 		return str(resp)
 
 	# set a new save file name randomly
-	save_name = randomword(128) + ".wav"
+	save_name = randomword(128) + ".mp3"
 	# set the secure recording URL location
 	new_recording_url = 'https://twilio.ehhapp.org/play_recording?filename=' + save_name
 	# set the message url and update the db
