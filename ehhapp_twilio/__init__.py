@@ -6,7 +6,7 @@ from twilio.rest import TwilioRestClient
 from flask.ext.mail import Mail
 
 #Flask init
-app = Flask(__name__, static_folder='')
+app = Flask("ehhapp_twilio", static_folder='')
 app.config['SQLALCHEMY_DATABASE_URI'] = sqlalchemy_db
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.secret_key = flask_secret_key
