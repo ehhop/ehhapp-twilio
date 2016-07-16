@@ -1,12 +1,29 @@
 #!/usr/bin/python 
 
+"""
+Tests
+
+A few parts:
+    - Deployment Environment
+    - Routes
+    - API calls
+"""
+
+import urllib2, time, os
+
+# Deployment Environment
+def test_redis_is_running():
+	print "checking if redis is running... "
+        redis_pass = 'redis_pass'
+	result = os.popen("redis-cli -a " + redis_pass + " ping").read()
+	assert "PONG" in result
+
 import ehhapp_twilio
 from ehhapp_twilio.config import *
 import unittest
 from flask import Flask
 import flask.ext.login as flask_login
 from flask.ext.testing import LiveServerTestCase
-import urllib2, time, os
 routes = ["/?From=1234567890",
 	"/dial_extension",
 	"/dial_extension?Digits=9999",
@@ -65,12 +82,7 @@ class HelloTest(unittest.TestCase):
 		print r, response.status_code
 		assert response.status_code in [200, 302]
 	pass
-	
-    def test_redis_is_running(self):
-	print "checking if redis is running... "
-	result = os.popen("redis-cli -a " + redis_pass + " ping").read()
-	assert "PONG" in result
-
+	 
     def test_celery_VM_upload_download(self):
 	print "checking celery and VM downloads"
 	upload = ehhapp_twilio.backgroundtasks.async_process_message.apply_async(args=["http://www.kozco.com/tech/piano2.wav", 0, "1234567890", "Twilio"], kwargs={'assign':"rneff@ehhapp.org"})

@@ -2,7 +2,6 @@ venv
 *.pyc
 *.conf
 *.json
-config.py
 celeryconfig.py
 *.swp
 *.tsv
@@ -10,3 +9,6 @@ celeryconfig.py
 
 # docs
 docs/_build
+
+# pytest
+.cache

@@ -1,3 +1,5 @@
+[![CircleCI](https://circleci.com/gh/ehhop/ehhapp-twilio/tree/master.svg?style=svg)](https://circleci.com/gh/ehhop/ehhapp-twilio/tree/master)
+
 # ehhapp-twilio
 
 twilio implementation of the EHHOP-phone tree
@@ -15,12 +17,6 @@ To really run this thing you'll want the following resources in your infrastruct
 * sqllite
 * redis
 
-## Read the Documentation
-
-We use Sphinx. To build the documentation, navigate into the docs directory, and run `sphinx-build -b html _src _build` where '\_src' and '\_build' are the source directory (where all the rst files are) and the build directory (where the html ends up) respectively.
-
-If you have `make`, just `make html`.
-
 ## Contributing
 
 You can test the setup by calling the demo number set up at 862-242-5952.
@@ -35,8 +31,51 @@ You can test the setup by calling the demo number set up at 862-242-5952.
 
 9/4/2015: All paths have been enabled but there may still be some bugs.
 
-### Getting started
+### Python Version
+
+This was developed on a Debian 7 server using Python 2.7.11 packages. It is recommended that anyone contributing to this codebase use [pyenv][pyenv] to manage different python versions. Until tests are written verifying compatability across different python versions, the `.python-version` file specifies which version this code is intended to run under.
+
+### Virtualenv
+
+Packages can and should be isolated from system site-packages in a virtualenv. Run `virtualenv venv` and then `source venv/bin/activate` before doing anything else.
+
+### Dependencies
+
+We use the `requirements.txt` file to specify required packages. Run `pip install -r requirements.txt` to get what you need.
+
+### Run Tests
+
+Test are currently written in full-blown `unittest` syntax. Our CI tool will run `py.test tests.py`. Why have we chosen [pytest][pytest] over [nose][nose]? It "feels" better maintained.
+
+### Read the Documentation
+
+We use Sphinx. To build the documentation, navigate into the docs directory, and run `sphinx-build -b html _src _build` where '\_src' and '\_build' are the source directory (where all the rst files are) and the build directory (where the html ends up) respectively.
+
+If you have `make`, just `make html`.
+
+### Write the Documentation
+
+Contribute! To automate `make html` whenever you contribute to the documentation, use the [entr][entr] utility. 
+
+`ls -d _src/* | entr make html`
+
+It watches for changes to the \_src/ directory, and automatically runs `make html` as files change.
+
+To save you the headache of having to refresh the browser window you have open to the docs, you can also run in a different pane:
+
+`ls -d _build/html/*.html | entr reload-browser $BROWSER_OF_CHOICE`
+
+This sends a key-press to the browser and will refresh whatever the active tab is. This assumes the tab is open to wherever you are hosting the docs (usually localhost:8000 if you are using a Python's built-in `SimpleHTTPServer`).
+
+### Launch It
 
 To run it on localhost use:
 
 `python run.py`
+
+---
+
+<!-- Links -->
+[pyenv]: https://github.com/yyuu/pyenv
+[pytest]: http://pytest.org/latest/
+[nose]: http://nose.readthedocs.io/en/latest/

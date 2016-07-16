@@ -5,6 +5,16 @@
 from twilio.rest import TwilioRestClient
 from ehhapp_twilio.config import *
 
+"""
+Cleaner
+
+It is meant to run periodically to delete call records from Twilio servers. 
+A critical component for protecting patient privacy.
+
+Requires:
+    twilio_AccountSID, twilio_AuthToken
+"""
+
 # step 1 - delete call records
 client = TwilioRestClient(twilio_AccountSID, twilio_AuthToken)
 calls = client.calls.list()
