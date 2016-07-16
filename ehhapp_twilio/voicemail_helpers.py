@@ -392,6 +392,21 @@ def add_voicemail(recording_name, ani=None, intent=None, requireds=None, assigns
 	db_session.commit()
 	return record.id
 
+@app.route('/voicemails/edit<int:record_id>', methods=['GET', 'POST'])
+@flask_login.login_required
+def edit_voicemail_assignment(record_id):
+	'''GUI: edit a VM assignment'''
+	vm = Voicemail.query.get(record_id)
+	form = VoicemailForm(request.form, obj=vm)
+	if request.method == 'POST' and form.validate():
+		vm.assigns = form.assigns.data
+		db_session.add(vm)
+		db_session.commit()
+		flash('VM assignment edited.')
+		return redirect(url_for('serve_vm_admin'))
+	return render_template("intent_form.html", action="Edit", data_type="assignment", form=form)
+
+
 @app.route('/voicemails/delete<int:record_id>', methods=['GET'])
 @flask_login.login_required
 def delete_vm(record_id):
