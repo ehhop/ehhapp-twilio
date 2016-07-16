@@ -127,8 +127,9 @@ def handle_recording(intent):
 	to_email = request.values.get('to_email', None)				# if a specific person needs this (dial_extension)
 	no_requireds = True if to_email != None else False			# used by dial_extension to send direct VMs
 	recording_url = request.values.get("RecordingUrl", None)		# get the recording URL from Twilio
-
-	async_process_message.delay(recording_url, intent, ani, assign=to_email, no_requireds=no_requireds)	# process message asynchronously 
+	recording_duration = int(request.values.get("RecordingDuration", 60))
+	if recording_duration >= 5: # only if longer than 5 seconds
+		async_process_message.delay(recording_url, intent, ani, assign=to_email, no_requireds=no_requireds)	# process message asynchronously 
 														# (e.g. download and send emails) using Celery
 	###if the message was successfully sent... TODO to check
 	resp.play("/assets/audio/sent_message.mp3")				# Your message was sent. Thank you for contacting EHHOP. Goodbye!
