@@ -76,7 +76,7 @@ def getOnCallPhoneNum():					# get the on call phone #
 	database = EHHOPdb(credentials)
         return_num = None
         try:
-                return_names = database.lookup_name_in_schedule("On Call Medical Clinic TS", getSatDate())	# maybe we could add this to routes?
+                return_names = database.lookup_name_in_schedule("On Call Medical Clinic TS", getlastSatDate())	# maybe we could add this to routes?
                 if return_names != []:
                         return_num = database.lookup_phone_by_name(return_names[0])
 		return return_num
@@ -92,5 +92,19 @@ def getSatDate():
                 addtime=timedelta(6)
         else:
                 addtime=timedelta(5-day_of_week)
+        satdate = (time_now+addtime).strftime('%-m/%-d/%Y')
+        return satdate
+
+def getlastSatDate(): # go Wed-Wed
+        # get next saturday's date for lookups in the schedule
+        time_now = datetime.now(pytz.timezone('US/Eastern'))
+        day_of_week = time_now.weekday()
+        addtime = None
+        if day_of_week == 6:
+        	addtime = timedelta(-1)
+        elif day_of_week >= 2:
+            addtime=timedelta(5-day_of_week)
+        elif day_of_week < 2:
+        	addtime = timedelta(-(2+day_of_week))
         satdate = (time_now+addtime).strftime('%-m/%-d/%Y')
         return satdate

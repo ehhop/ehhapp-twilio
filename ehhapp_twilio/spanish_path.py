@@ -151,7 +151,7 @@ def sp_find_in_schedule(person_type):
 	database = EHHOPdb(credentials)
 	return_num = None
 	try:
-		satdate = str(ehhapp_twilio.database_helpers.getSatDate())
+		satdate = str(ehhapp_twilio.database_helpers.getlastSatDate())
 		return_names = database.lookup_name_in_schedule(person_type, satdate)
 		if return_names != []:
 			return_num = database.lookup_phone_by_name(return_names[0])

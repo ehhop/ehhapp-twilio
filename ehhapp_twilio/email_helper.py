@@ -33,7 +33,7 @@ def process_recording(recording_url, intent, ani, requireds=None, assign=None, n
 	auth_method:	(optional) specify different twilio REST API credentials
 	'''
 
-	satdate = getSatDate() # get next clinic date
+	satdate = getlastSatDate() # get next clinic date
 	recording_name = save_file(recording_url, auth_method) # save the file
 	playback_url = player_url + recordings_base + recording_name
 	slack_notify('<' + playback_url + '|New voicemail received>')
@@ -178,4 +178,16 @@ def getSatDate():
         satdate = (time_now+addtime).strftime('%-m/%-d/%Y')
 	return satdate
 
-
+def getlastSatDate(): # go Wed-Wed
+        # get next saturday's date for lookups in the schedule
+        time_now = datetime.now(pytz.timezone('US/Eastern'))
+        day_of_week = time_now.weekday()
+        addtime = None
+        if day_of_week == 6:
+        	addtime = timedelta(-1)
+        elif day_of_week >= 2:
+            addtime=timedelta(5-day_of_week)
+        elif day_of_week < 2:
+        	addtime = timedelta(-(2+day_of_week))
+        satdate = (time_now+addtime).strftime('%-m/%-d/%Y')
+        return satdate

@@ -122,7 +122,7 @@ def play_vm_recording():
 	elif filename[-3:]=="wav":
 		return Response(get_file(filename), mimetype="audio/wav", status=200)
 	else:
-		return Response(get_file(filename), status=200)
+		return Response(get_file(filename), status=200, mimetype="audio/mpeg")
 	
 ############ ADMIN PANEL indexes #############
 
@@ -304,7 +304,7 @@ def test_intent(intent_id):
 	for a in assigns:
 		pos = a.strip(" ")
 		assignresult[pos] = []
-		interresult = db.lookup_name_in_schedule(pos, getSatDate())
+		interresult = db.lookup_name_in_schedule(pos, getlastSatDate())
 		for i in interresult:
 			phone = db.lookup_phone_by_name(i)
 			assignresult[pos].append([i, phone])
