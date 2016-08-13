@@ -41,19 +41,19 @@ def sp_clinic_open_menu():
 	oncall_current_phone = getOnCallPhoneNum()
 
 	# appointment today
-	if digit == '1':
-		# now transferring your call
-		resp.play("/assets/audio/sp_xfer_call.mp3") # RE-RECORD
-		# dial current CM
-		resp.dial(oncall_current_phone)
-		# if the call fails
-		resp.play('/assets/audio/allbusy_trylater_sp.mp3') # RE-RECORD
-		# replay initial menu
-		with resp.gather(numDigits=1, action="/handle_key/sp/clinic_open_menu", method="POST") as g:
-				g.play("/assets/audio/sp_clinic_open_menu.mp3")
-				g.pause(length=5)
+	#if digit == '1':
+	#	# now transferring your call
+	#	resp.play("/assets/audio/sp_xfer_call.mp3") # RE-RECORD
+	#	# dial current CM
+	#	resp.dial(oncall_current_phone)
+	#	# if the call fails
+	#	resp.play('/assets/audio/allbusy_trylater_sp.mp3') # RE-RECORD
+	#	# replay initial menu
+	#	with resp.gather(numDigits=1, action="/handle_key/sp/clinic_open_menu", method="POST") as g:
+	#			g.play("/assets/audio/sp_clinic_open_menu.mp3")
+	#			g.pause(length=5)
 	# not been here before
-	elif digit in [str(i.digit) for i in models.Intent.query.all() if int(i.digit) >= 2]:
+	if digit in [str(i.digit) for i in models.Intent.query.all() if int(i.digit) >= 1]:
 		return redirect('/sp/take_message/' + digit)
 	# accidential key press
 	else:
