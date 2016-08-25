@@ -70,7 +70,7 @@ def clinic_open_menu():
 	#	with resp.gather(numDigits=1, action="/handle_key/clinic_open_menu", method="POST") as g: 	# replay open menu after failure
 	#			g.play("/assets/audio/clinic_open_menu.mp3")
 	#			g.pause(length=5)
-	if intent in [str(i.digit) for i in Intent.query.all() if int(i.digit) >= 1]:				# patient doesnt have appt today (everything else)
+	if intent in [str(i.digit) for i in models.Intent.query.all() if int(i.digit) >= 0]:				# patient doesnt have appt today (everything else)
 		return redirect('/take_message/' + intent)			# take a message
 	else:									# accidental key press
 		resp.play('/assets/audio/incorrectkey.mp3')

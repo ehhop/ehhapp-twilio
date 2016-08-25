@@ -178,7 +178,9 @@ def getSatDate():
         satdate = (time_now+addtime).strftime('%-m/%-d/%Y')
 	return satdate
 
-def getlastSatDate(time_now = datetime.now(pytz.timezone('US/Eastern'))): # go Wed-Wed
+def getlastSatDate(time_now = None): # go Wed-Wed
+	if time_now == None:
+		time_now = datetime.now(pytz.timezone('US/Eastern'))
         # get next saturday's date for lookups in the schedule
         day_of_week = time_now.weekday()
         addtime = None

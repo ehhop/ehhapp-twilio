@@ -53,7 +53,7 @@ def sp_clinic_open_menu():
 	#			g.play("/assets/audio/sp_clinic_open_menu.mp3")
 	#			g.pause(length=5)
 	# not been here before
-	if digit in [str(i.digit) for i in models.Intent.query.all() if int(i.digit) >= 1]:
+	if digit in [str(i.digit) for i in models.Intent.query.all() if int(i.digit) >= 0]:
 		return redirect('/sp/take_message/' + digit)
 	# accidential key press
 	else:
