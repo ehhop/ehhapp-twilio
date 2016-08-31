@@ -32,7 +32,8 @@ def auth_selection():
 	digit = request.values.get("Digits", None)
 	
 	if digit == '1':						# pacific interpreters
-		resp.dial('+18002641552', callerId='+18622425952')
+		with resp.dial(callerId='+18622425952') as n:
+			n.number(number='+18002641552', sendDigits="wwwwww828099#")
 		return str(resp)
 	elif digit == '2':						# use EHHOP caller ID
 		with resp.gather(numDigits=10, action='/caller_id_dial', method='POST') as g:
