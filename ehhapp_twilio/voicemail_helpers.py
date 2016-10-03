@@ -81,9 +81,13 @@ def logout():
 def serve_vm_player():
 	'''serves the play a voicemail page for a single voicemail'''
 	audio_url = request.values.get('a', None)
+	message_id = audio_url.split("=")[-1]
+	vm_info = Voicemail.query.filter_by(message=message_id).first()
+	vm_info.intent = Intent.query.filter_by(digit=vm_info.intent).first().description
 	return render_template("player_twilio.html",
 				audio_url = audio_url, 
-				vm_client_id = vm_client_id)
+				vm_client_id = vm_client_id, 
+				vm_info = vm_info)
 
 
 @app.route('/play_recording', methods=['GET', 'POST'])

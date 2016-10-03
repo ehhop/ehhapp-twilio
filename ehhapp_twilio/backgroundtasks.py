@@ -23,9 +23,13 @@ celery = make_celery(app)
 def async_process_message(recording_url, intent, ani, requireds=None, assign=None, no_requireds=False):
 	'''background download a VM message, send emails, etc.'''
 	name = process_recording(recording_url, intent, ani, requireds=requireds, 
-							     assign=assign, 
+							     assign=assign,
 							     no_requireds=no_requireds)
-	return name
+	## example = https://api.twilio.com/2010-04-01/Accounts/ACb9eae62a9e303d8cf34f5c3d3d6fa020/Recordings/REd45318fa30bcdbdad533df02c57e2c95.wav
+	record_sid = recording_url.split("/")[-1].split(".")[0]
+	with open("/var/wsgiapps/ehhapp_twilio/download_log.txt", "a") as fp:
+		fp.write(record_sid + "\n")
+	return name #randomly-generated name
 
 @celery.task
 def save_secure_message(recording_url, save_name):

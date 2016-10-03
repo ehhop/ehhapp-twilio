@@ -42,14 +42,14 @@ class EHHOPdb:							# our Google Drive database
 	def lookup_phone_by_name(self, name):
 		# get a phone number from a name, like from the schedule
 		for record in self.personnel:
-			if name == record['Name']:
+			if name.strip() == record['Name'].strip():
 				return '+1' + self.sanitize.sub('', record['Telephone']) # if we found the extension
 		return None # if no return
 
 	def lookup_email_by_name(self, name):
 		# get an email from a name, like from the schedule
 		for record in self.personnel:
-			if name == record['Name']:
+			if name.strip() == record['Name'].strip():
 				return record['Email'] # if we found the extension
 		return None # if no return
 
@@ -69,7 +69,7 @@ class EHHOPdb:							# our Google Drive database
 		people = []
 		for record in self.personnel:
 			if person_type.lower() in record['Position'].lower():
-				people.append([record['Name'], '+1' + self.sanitize.sub('', record['Telephone']), record['Email']])
+				people.append([record['Name'].strip(), '+1' + self.sanitize.sub('', record['Telephone']), record['Email']])
 		return people # return empty list
 
 def getOnCallPhoneNum():					# get the on call phone #
