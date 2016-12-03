@@ -1,3 +1,7 @@
+import sys, os.path
+project_dir, testdir = os.path.split(os.path.split(os.path.abspath(__file__))[0])
+sys.path.append(project_dir)
+
 import unittest
 import ehhapp_twilio
 from flask import Flask
