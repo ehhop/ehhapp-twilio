@@ -14,6 +14,8 @@ from flask import flash
 import pytz, os, shutil, random, string, sys
 from datetime import datetime, timedelta
 
+from sqlalchemy import desc
+
 ############# logins ############
 
 login_manager = flask_login.LoginManager()
@@ -163,7 +165,7 @@ def serve_assignment_admin(page=1):
 def serve_call_admin(page=1):
 	'''GUI: serve the call log page'''
 	# TODO: need to add pagination to this!!!
-        calls = Call.query.order_by(Call.id).paginate(page, 2000, False)
+        calls = Call.query.order_by(desc(Call.id)).paginate(page, 200, False)
         return render_template("calls.html",
                                 calls = calls)
 
@@ -173,7 +175,7 @@ def serve_call_admin(page=1):
 def serve_vm_admin(page=1):
 	'''GUI: serve the voicemails page'''
 	# TODO: need to add pagination to this!!!
-        voicemails = Voicemail.query.order_by(Voicemail.id).paginate(page, 2000, False)
+        voicemails = Voicemail.query.order_by(desc(Voicemail.id)).paginate(page, 100, False)
 	for vm in voicemails.items:
 		vm.intent = Intent.query.filter_by(digit=vm.intent).first().description
         return render_template("voicemails.html",

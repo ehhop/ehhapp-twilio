@@ -43,6 +43,13 @@ def auth_selection():
 		with resp.gather(numDigits=10, action='/secure_message/setnum/', method='POST') as g:
 			g.play('/assets/audio/entertendigits-vm.mp3')
 		return str(resp)
+	elif digit == '4':
+		db = EHHOPdb(credentials)
+		TS  = db.lookup_name_in_schedule('On Call Medical Clinic TS', getlastSatDate())
+		num = db.lookup_phone_by_name(TS[0])
+		resp.play("Transferring to on call TS.")
+		resp.dial(num)
+		return str(resp)
 	else:								# incorrect key
 		resp.play('/assets/audio/incorrectkey.mp3')
 		with resp.gather(numDigits=1, action='/auth_selection', method='POST') as g:
