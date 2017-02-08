@@ -15,6 +15,7 @@
 		<thead>
 			<tr>
 			<th> # </th>
+			<th> Intent </th>
 			<th> From Phone </th>
 			<th> Recipients </th>
 			<th> Actions </th>
@@ -24,6 +25,7 @@
 		{% for assign in assignments.items %}
 		<tr>
 			<th scope="row">{{ assign.id }}</th>
+			<td> {{ assign.intent }} </td>
 			<td> {{ assign.from_phone[0:3] + "-" + assign.from_phone[3:6] + "-" + assign.from_phone[6:] }}</td>
 			<td> {{ assign.recipients }}</td>
 			<td> 

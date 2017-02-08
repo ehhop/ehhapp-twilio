@@ -16,5 +16,6 @@ import subprocess
 
 save_name = subprocess.check_output('date +%m%d%y', shell=True).strip('\n') + '-ehhapp-twilio.db'
 session = FTP_TLS('ftp.box.com', box_username, box_password)
+session.prot_p()
 session.storbinary('STOR server/' + save_name, open('ehhapp-twilio.db', 'rb'))
 session.quit()

@@ -23,6 +23,7 @@ class AssignmentForm(Form):
    '''GUI: assignment form used in views'''
    from_phone = TextField('From phone', validators=[validators.Length(min=10, max=10)],
 					filters=[lambda x: x, filter_phone])
+   intent = TextField('Intent')
    recipients = TextField('Assigned to')
 
 class AudiofileForm(Form):

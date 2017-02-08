@@ -114,10 +114,12 @@ class Assignment(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
 	from_phone = db.Column(EncryptedType(db.String, flask_secret_key))
 	recipients = db.Column(db.String)
+	intent = db.Column(db.Integer)
 
 	def __repr__(self):
 		return '<Assignment %r>' % (self.id)
 
-	def __init__(self, from_phone=None, recipients=None):
+	def __init__(self, from_phone=None, recipients=None, intent=None):
 		self.from_phone = from_phone
 		self.recipients = recipients
+		self.intent = intent

@@ -41,7 +41,7 @@ def process_recording(recording_url, intent, ani, requireds=None, assign=None, n
 
 	# figure out who to send the message to
 	if assign==None:
-		db_assign = Assignment.query.filter_by(from_phone=ani[-10:]).all()
+		db_assign = Assignment.query.filter_by(from_phone=ani[-10:], intent=intent).all()
 		if db_assign != []: #someone is responsible for that phone number
 			assign = [a.recipients.replace(" ", "").split(',') for a in db_assign]
 			assign = [item for sublist in assign for item in sublist] # flatten array of arrays
@@ -71,7 +71,7 @@ def process_recording(recording_url, intent, ani, requireds=None, assign=None, n
 					# save the new assignment to the database for later retrieval
 				if assign_person != "":
 					assign.append(assign_person)
-					new_assign = Assignment(from_phone=ani[-10:], recipients=assign_person)
+					new_assign = Assignment(from_phone=ani[-10:], recipients=assign_person, intent=intent)
 					db_session.add(new_assign)
 					db_session.commit()
 			assign = ", ".join(assign)

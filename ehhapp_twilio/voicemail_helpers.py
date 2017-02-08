@@ -234,6 +234,7 @@ def edit_assignment(assign_id):
 	if request.method == 'POST' and form.validate():
 		assign.from_phone = form.from_phone.data
 		assign.recipients = form.recipients.data
+		assign.intent = form.intent.data
 		db_session.add(assign)
 		db_session.commit()
 		flash('Assignment edited.')

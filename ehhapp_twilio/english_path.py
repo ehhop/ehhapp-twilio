@@ -1,4 +1,5 @@
 #!/usr/bin/python
+import urllib
 from ehhapp_twilio import *
 from ehhapp_twilio.database_helpers import *
 from ehhapp_twilio.backgroundtasks import *
@@ -99,11 +100,11 @@ def clinic_closed_menu():
 @app.route("/take_message/<int:intent>", methods=['GET', 'POST'])
 def take_message(intent):
 	'''takes a voice message and passes it to the voicemail server'''
-	
 	resp = twilio.twiml.Response()
 	if intent == 0:								# used by dial_extension to send direct VM messages
 		to_email = request.values.get('to_email', fallback_email)	# fallback to send email to IT
-		after_record = '/handle_recording/' + str(intent) + '?to_email=' + to_email	# callback after VM left
+		encodedparams = urllib.urlencode({'to_email': to_email})		
+		after_record = '/handle_recording/' + str(intent) + '?' + encodedparams
 	else:
 		after_record = '/handle_recording/' + str(intent)		# callback after VM left
 	
