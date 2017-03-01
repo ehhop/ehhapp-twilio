@@ -121,6 +121,14 @@
     <div class="ui360 ui360-vis">
       <a href="{{audio_url}}">Voicemail message</a>
     </div>
+    {% if current_user.is_authenticated %}
+    <div style="margin-top:40px">
+      <table>
+	<tr><td style="width:100px;padding-bottom: 1em">From:</td><td style="padding-bottom:1em"><a href="tel:{{vm_info.from_phone}}">{{ vm_info.from_phone[-10:-7] + "-" + vm_info.from_phone[-7:-4] + "-" + vm_info.from_phone[-4:] }}</a></td></tr>
+	<tr><td style="width:100px;padding-bottom: 1em">Caller:</td><td style="padding-bottom:1em">{{vm_info.intent}}</td></tr>
+      </table>
+    </div>
+    {% endif %}
     <div class="instructions">Click the play button to start listening.
     <p><a href="/voicemails"><h3>Listen to other voicemails »</h3></a>	
     </div>

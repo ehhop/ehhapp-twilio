@@ -20,6 +20,7 @@
 			<th> Intent </th>
 			<th> Assigned to </th>
 			<th> Message </th>
+			<th> Views </th>
 			{% if current_user.email =="ryan.neff@icahn.mssm.edu" %}<th> Actions </th>{% endif %}
 			</tr>
 		</thead>
@@ -27,11 +28,12 @@
 		{% for vm in voicemails.items %}
 		<tr>
 			<td> {{loop.index}}</td>
-			<td style="min-width:170px"> {{ momentjs(vm.time).calendar() }}</td>
-			<td style="min-width:70px"> <a href="https://twilio.ehhapp.org/flashplayer?a={{ recordings_base+vm.message }}">{{ vm.from_phone[-10:-7] + "-" + vm.from_phone[-7:-4] + "-" + vm.from_phone[-4:] }}</a></td>
-			<td style="min-width:200px"> {{ vm.intent }}</td>
-			<td style="max-width:250px; overflow-wrap:break-word"> {{ vm.assigns }}</td>
+			<td style="min-width:170px">{{ momentjs(vm.time).calendar() }}</td>
+			<td style="min-width:60px"> <a href="tel:{{vm.from_phone}}">{{ vm.from_phone[-10:-7] + "-" + vm.from_phone[-7:-4] + "-" + vm.from_phone[-4:] }}</a></td>
+			<td style="min-width:170px"> {{ vm.intent }}</td>
+			<td style="max-width:250px; overflow-wrap:break-word"> <a href="mailto:{{vm.assigns}}">{{ vm.assigns.split('@')[0] }}</a></td>
 			<td> <audio controls preload="none" style="width:200px"> <source src="{{ recordings_base+vm.message }}" type="audio/{% if vm.message[-3:]=="mp3" %}mpeg{% else %}wav{% endif %}"></audio></td>
+			<td>{% if vm.view_count != None %}{{vm.view_count}}{% else %}0{% endif %}</th>
 {% if current_user.email =="ryan.neff@icahn.mssm.edu" %}			<td> 
 			<a href="https://twilio.ehhapp.org/voicemails/delete{{ vm.id }}" class="btn btn-xs btn-danger" role="button">Delete</a>
 				</td>

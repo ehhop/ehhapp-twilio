@@ -92,6 +92,7 @@ def serve_vm_player():
 				vm_info = vm_info)
 
 
+# this route is authenticated, just using a dual mechanism (see below)
 @app.route('/play_recording', methods=['GET', 'POST'])
 def play_vm_recording():
 	'''serve the voicemail or secure message for playback'''
@@ -109,7 +110,7 @@ def play_vm_recording():
 	# sterilize filename to prevent attacks
 	safe_char = re.compile(r'[^\w.]+') # only alphanumeric and periods
 	filename = safe_char.sub('', filename)
-
+	
 	def get_file(filename):						# how do we 'stream' the file from Box to browser? using a callback!
 		class VMFile:						# this will store the VM message as a 
   			def __init__(self):				# memory object instead of in a file (+ deleted after execution)
@@ -121,6 +122,15 @@ def play_vm_recording():
 		session.retrbinary('RETR recordings/' + filename, v)	# add each chunk of data to memory from Box
 		session.close()						# close Box
 		return v.data						# return the data put back together again to be sent to browser
+
+	vm_info = Voicemail.query.filter_by(message=filename).first() # get VM record
+	if vm_info != None:
+		if vm_info.view_count != None:
+			vm_info.view_count += 1
+		else:
+			vm_info.view_count = 1
+	db_session.add(vm_info)
+	db_session.commit()
 	
 	# serve file
 	if filename[-3:]=="mp3":

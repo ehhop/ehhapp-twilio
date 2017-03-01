@@ -59,6 +59,9 @@ class Voicemail(db.Model):
     message = db.Column(EncryptedType(db.String, flask_secret_key), default=None)
     requireds = db.Column(EncryptedType(db.String, flask_secret_key), default=None)
     assigns = db.Column(EncryptedType(db.String, flask_secret_key), default=None)
+    view_count = db.Column(db.Integer, default=0)
+    status = db.Column(db.String, default="New")
+    last_updated_by = db.Column(EncryptedType(db.String, flask_secret_key), default=None)
 
     def __repr__(self):
         return '<Voicemail %r, Time: %r>' % (self.id, self.time)
