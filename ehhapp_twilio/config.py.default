@@ -104,6 +104,8 @@ c = ConfigFile()
 # only authenticate with Box if credentials are non-empty strings
 if got_box_credentials:
     session = FTP_TLS('ftp.box.com', box_username, box_password)
-    status = session.retrlines('RETR server/config.py', c) # retrieve config params from offsite
+    session.prot_p() # secures the connection so data transfer is encrypted
+    status = session.retrlines('RETR server/config.py', c) # retrieve config 
+                                                           # params from offsite
     exec c.data
 

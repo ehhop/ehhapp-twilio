@@ -61,7 +61,10 @@ Architecture
 
 ehhapp-twilio is meant to be deployed as a web application that responds 
 to Twilio requests. Twilio requests are triggered by phone calls to a 
-Twilio phone number.
+Twilio phone number. We are specifically taking advantage of the 
+`Twilio Voice`_ service.
+
+.. _Twilio Voice: https://www.twilio.com/docs/quickstart/python/twiml
 
 The app is coded in Python using the popular Flask framework. Why Python? 
 No particular reason. It is convenient. It is easy to learn. Why Flask? 
