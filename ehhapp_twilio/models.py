@@ -62,6 +62,7 @@ class Voicemail(db.Model):
     view_count = db.Column(db.Integer, default=0)
     status = db.Column(db.String, default="New")
     last_updated_by = db.Column(EncryptedType(db.String, flask_secret_key), default=None)
+    caller_id = db.Column(EncryptedType(db.String, flask_secret_key), default=None)
 
     def __repr__(self):
         return '<Voicemail %r, Time: %r>' % (self.id, self.time)
@@ -79,11 +80,12 @@ class Call(db.Model):
 	direction = db.Column(EncryptedType(db.String, flask_secret_key))
 	status = db.Column(EncryptedType(db.String, flask_secret_key))
 	actions = db.Column(EncryptedType(db.String, flask_secret_key))
+	caller_id = db.Column(EncryptedType(db.String, flask_secret_key), default=None)
 
 	def __repr__(self):
 		return '<Call %r, From: %r, Time: %r, Length: %r>' % (self.id, self.from_phone, self.time, self.duration)
 
-	def __init__(self, call_sid=None, from_phone=None, to_phone = to_phone, time=None, duration=None, direction=None, status=None):
+	def __init__(self, call_sid=None, from_phone=None, to_phone = to_phone, time=None, duration=None, direction=None, status=None, caller_id=None):
 		self.call_sid = call_sid
 		self.from_phone = from_phone
 		self.to_phone = to_phone
@@ -91,6 +93,7 @@ class Call(db.Model):
 		self.duration = duration
 		self.direction = direction
 		self.status = status
+		self.caller_id = caller_id
 
 
 class Intent(db.Model):

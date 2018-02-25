@@ -80,17 +80,17 @@ def logout():
 ######### PLAY VMs ##########
 
 @app.route('/flashplayer', methods=['GET'])
+@flask_login.login_required
 def serve_vm_player():
 	'''serves the play a voicemail page for a single voicemail'''
 	audio_url = request.values.get('a', None)
 	message_id = audio_url.split("=")[-1]
-	vm_info = Voicemail.query.filter_by(message=message_id).first()
-	vm_info.intent = Intent.query.filter_by(digit=vm_info.intent).first().description
-	return render_template("player_twilio.html",
-				audio_url = audio_url, 
-				vm_client_id = vm_client_id, 
-				vm_info = vm_info)
-
+	vm = Voicemail.query.filter_by(message=message_id).first_or_404()
+	vm.intent = Intent.query.filter_by(digit=vm.intent).first().description
+	return render_template("view_voicemail.html",
+				audio_url = audio_url,
+				vm = vm, 
+				recordings_base = recordings_base)
 
 # this route is authenticated, just using a dual mechanism (see below)
 @app.route('/play_recording', methods=['GET', 'POST'])
@@ -358,6 +358,7 @@ def add_call():
 	duration = request.values.get('CallDuration', None)
 	direction = request.values.get('Direction', None)
 	status = request.values.get('CallStatus', None)
+	caller_id = request.values.get('CallerName', None)
 
 	time_now = datetime.now(pytz.timezone('US/Eastern'))
 	subtime=timedelta(seconds=int(duration)) if duration != None else timedelta(seconds=5)
@@ -369,7 +370,8 @@ def add_call():
 		    time = starttime,
 		    duration = duration,
 	            direction = direction,
-		    status = status)
+		    status = status, 
+		    caller_id = caller_id)
 
 	# commit record to DB
 	db_session.add(call)
@@ -396,7 +398,7 @@ def delete_call(call_id):
 
 ############ recordings:funcs ##############
 
-def add_voicemail(recording_name, ani=None, intent=None, requireds=None, assigns=None):
+def add_voicemail(recording_name, ani=None, intent=None, requireds=None, assigns=None, caller_id=None):
 	'''Internal function to accept incoming VMs and store them in DB'''
 	time_now = datetime.now(pytz.timezone('US/Eastern'))
 	record = Voicemail(intent=intent,
@@ -404,10 +406,32 @@ def add_voicemail(recording_name, ani=None, intent=None, requireds=None, assigns
 			   time=time_now.strftime('%-m/%-d/%Y %H:%M:%S'),
 			   message=recording_name,
 			   requireds=requireds,
-			   assigns=assigns)
+			   assigns=assigns, 
+			   caller_id=caller_id)
 	db_session.add(record)
 	db_session.commit()
 	return record.id
+
+@app.route('/voicemails/<int:record_id>/status/update/<input_status>', methods=['GET', 'POST'])
+@flask_login.login_required
+def update_vm_status(record_id, input_status):
+	'''GUI: edit a VM assignment'''
+	user = flask_login.current_user
+	vm = Voicemail.query.get(record_id)
+	escaped_status = input_status.replace("-"," ")
+	vm.status = escaped_status
+	status_dict = {"users":{}}
+	if vm.last_updated_by != None:
+		try:
+			status_dict = json.loads(vm.last_updated_by)
+		except:
+			pass
+	status_dict["users"][len(status_dict["users"])] = {"time":str(datetime.now()), "email":user.email, "status": escaped_status}
+	vm.last_updated_by = json.dumps(status_dict)
+	db_session.add(vm)
+	db_session.commit()
+	flash("Updated status")
+	return redirect(url_for('serve_vm_admin'))
 
 @app.route('/voicemails/edit<int:record_id>', methods=['GET', 'POST'])
 @flask_login.login_required

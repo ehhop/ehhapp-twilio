@@ -22,7 +22,7 @@ from flask.ext.mail import Message
 # user/pass to log into Twilio to retrieve files
 auth_combo=HTTPBasicAuth(twilio_AccountSID, twilio_AuthToken)
 
-def process_recording(recording_url, intent, ani, requireds=None, assign=None, no_requireds=False, auth_method=auth_combo):
+def process_recording(recording_url, intent, ani, requireds=None, assign=None, no_requireds=False, caller_id=None, auth_method=auth_combo):
 	'''process_recording(recording_url, intent, ani, requireds=None, assign=None, auth_method=auth_combo)
 	recording_url:	URL of recording to download
 	intent:		the digit pressed by the caller
@@ -100,12 +100,12 @@ def process_recording(recording_url, intent, ani, requireds=None, assign=None, n
 	if no_requireds:						# if a direct VM (dial_extension)
 		requireds = ''
 	with app.app_context():						# pass the Flask app to the next function (weird rendering quirk)
-		add_voicemail(recording_name, intent=intent, ani=ani, requireds=requireds, assigns=assign)
-		send_email(recording_name, intent, ani, requireds, assign)
+		add_voicemail(recording_name, intent=intent, ani=ani, requireds=requireds, assigns=assign, caller_id=caller_id)
+		send_email(recording_name, intent, ani, requireds, assign, caller_id=caller_id)
 	#delete_file(recording_url)					# delete recording from Twilio
 	return recording_name
 
-def send_email(recording_name, intent, ani, requireds, assign, app=app):
+def send_email(recording_name, intent, ani, requireds, assign, caller_id=None, app=app):
 	'''send an email to the required and assigned recipients'''
 	intent = str(intent)
 	# look for configuration variables in params.conf file...
@@ -118,9 +118,9 @@ def send_email(recording_name, intent, ani, requireds, assign, app=app):
 	msg.cc = requireds.split(',') if ',' in requireds else [requireds]
 	with app.app_context():
 		msg.html = render_template('email.html', from_phone = ani, assign_names = assign_names, 
-					playback_url = player_url + recordings_base + recording_name, desc = description)
+					playback_url = player_url + recordings_base + recording_name, desc = description, caller_id=caller_id)
 		msg.body = render_template('email.txt', from_phone = ani, assign_names = assign_names, 
-					playback_url = player_url + recordings_base + recording_name, desc = description)
+					playback_url = player_url + recordings_base + recording_name, desc = description, caller_id=caller_id)
 	mail.send(msg)
 	return None
 
@@ -134,7 +134,8 @@ def save_file(recording_url, auth_method):
 	response = requests.get(recording_url+".mp3", stream=True, auth=auth_method) 	# no data has been downloaded yet (just headers)
 										# step 2 - read the response object in chunks and write it to the HIPAA box directly
 	session.storbinary('STOR recordings/' + save_name, response.raw)
-										# step 3 - cleanup
+
+	response.close()										# step 3 - cleanup
 	session.quit()
 	del response
 	return save_name
@@ -148,7 +149,8 @@ def save_file_with_name(recording_url, auth_method, save_name):
 	response = requests.get(recording_url, stream=True, auth=auth_method) 	# no data has been downloaded yet (just headers)
 										# step 2 - read the response object in chunks and write it to the HIPAA box directly
 	session.storbinary('STOR recordings/' + save_name, response.raw)
-										# step 3 - cleanup
+	
+	response.close()										# step 3 - cleanup
 	session.quit()
 	del response
 	return save_name

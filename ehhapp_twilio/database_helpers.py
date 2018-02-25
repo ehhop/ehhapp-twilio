@@ -74,14 +74,17 @@ class EHHOPdb:							# our Google Drive database
 
 def getOnCallPhoneNum():					# get the on call phone #
 	database = EHHOPdb(credentials)
-        return_num = None
+        return_num = []
         try:
-                return_names = database.lookup_name_in_schedule("On Call Medical Clinic TS", getlastSatDate())	# maybe we could add this to routes?
-                if return_names != []:
-                        return_num = database.lookup_phone_by_name(return_names[0])
-		return return_num
+            return_names = database.lookup_name_in_schedule("On Call Medical Clinic CM", getlastSatDate())	# maybe we could add this to routes?
+            if return_names != []:
+                for r in return_names:
+                    result = database.lookup_phone_by_name(r)
+                    if r != None:
+                    	return_num.append(result)
+            return return_num
         except:
-                return fallback_phone				# fallback if fail to find the number
+            return fallback_phone				# fallback if fail to find the number
 
 def getSatDate():
         # get next saturday's date for lookups in the schedule

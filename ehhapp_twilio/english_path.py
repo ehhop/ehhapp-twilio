@@ -38,18 +38,19 @@ def new_established_menu():
 	resp = twilio.twiml.Response()
 	digit = request.values.get('Digits', None)				# get keypress
 	day_of_week = datetime.now(pytz.timezone('US/Eastern')).weekday()	# get day of week (0 is Monday and 6 is Sunday)
+	hour_of_day = datetime.now(pytz.timezone('US/Eastern')).hour
 	if digit == "2":
 		resp.redirect("/take_message/9")
 	elif digit == "3":
-		if day_of_week == 5:
+		if (day_of_week == 5) & ((hour_of_day >=7) & (hour_of_day < 15)): #open between 7 am to 3 PM on clinic day
 			with resp.gather(numDigits=1, action="/handle_key/clinic_open_menu", method="POST") as g:
         	                for i in range(0,3):
-                	                g.play("/assets/audio/clinic_open_menu.mp3")
+                	                g.play("/assets/audio/clinic_open_menu.mp3") #this audio is the same...
                         	        g.pause(length=5)
 		else:
 			with resp.gather(numDigits=1, action="/handle_key/clinic_closed_menu", method="POST") as g:
         	                for i in range(0,3):
-                	                g.play("/assets/audio/clinic_open_menu.mp3")
+                	                g.play("/assets/audio/clinic_closed_menu.mp3")
                         	        g.pause(length=5)
 	else:
 		resp.play('/assets/audio/incorrectkey.mp3')			# They have pressed an incorrect key.
@@ -64,14 +65,16 @@ def clinic_open_menu():
 
 	oncall_current_phone = getOnCallPhoneNum()				# get the phone # of the on call - fallback if something wrong
 
-	#if intent == '1':  							# urgent concern
-	#	resp.play("/assets/audio/xfer_call.mp3")			# now transferring to oncall
-	#	resp.dial(oncall_current_phone)					# dial current oncall TS
-	#	resp.play('/assets/audio/allbusy_trylater.mp3')			# if call fails (not picked up)
-	#	with resp.gather(numDigits=1, action="/handle_key/clinic_open_menu", method="POST") as g: 	# replay open menu after failure
-	#			g.play("/assets/audio/clinic_open_menu.mp3")
-	#			g.pause(length=5)
-	if intent in [str(i.digit) for i in models.Intent.query.all() if int(i.digit) >= 0]:				# patient doesnt have appt today (everything else)
+	if (intent == '1') | (intent == '2'):  					# urgent concern or appointment question
+		resp.play("/assets/audio/xfer_call.mp3")			# now transferring to oncall
+		with resp.dial(timeout=15) as d:
+			for number in oncall_current_phone:
+				d.number(number)			            # dial current oncall CMs
+		resp.play('/assets/audio/allbusy_trylater.mp3')	    # if call fails (not picked up)
+		with resp.gather(numDigits=1, action="/handle_key/clinic_open_menu", method="POST") as g: 	# replay open menu after failure
+				g.play("/assets/audio/clinic_open_menu.mp3")
+				g.pause(length=5)
+	elif intent in [str(i.digit) for i in models.Intent.query.all() if int(i.digit) >= 0]:				# patient doesnt have appt today (everything else)
 		return redirect('/take_message/' + intent)			# take a message
 	else:									# accidental key press
 		resp.play('/assets/audio/incorrectkey.mp3')
@@ -93,7 +96,7 @@ def clinic_closed_menu():
 		resp.play('/assets/audio/incorrectkey.mp3')
 		resp.pause(length=3)
 		with resp.gather(numDigits=1, action="/handle_key/clinic_closed_menu", method="POST") as g: 	#replay closed menu
-			g.play("/assets/audio/clinic_open_menu.mp3")
+			g.play("/assets/audio/clinic_closed_menu.mp3")
 			g.pause(length=5)
 	return str(resp)							# return response
 	
@@ -124,13 +127,14 @@ def take_message(intent):
 def handle_recording(intent):
 	'''patient has finished leaving recording'''
 	resp = twilio.twiml.Response()
-	ani = request.values.get('From', 'None')				# get patient's caller id
+	ani = request.values.get('From', 'None')				# get person's phone number
+	caller_id = request.values.get("CallerName", None)			# get person's caller ID
 	to_email = request.values.get('to_email', None)				# if a specific person needs this (dial_extension)
 	no_requireds = True if to_email != None else False			# used by dial_extension to send direct VMs
 	recording_url = request.values.get("RecordingUrl", None)		# get the recording URL from Twilio
 	recording_duration = int(request.values.get("RecordingDuration", 60))
 	if recording_duration >= 5: # only if longer than 5 seconds
-		async_process_message.delay(recording_url, intent, ani, assign=to_email, no_requireds=no_requireds)	# process message asynchronously 
+		async_process_message.delay(recording_url, intent, ani, assign=to_email, no_requireds=no_requireds, caller_id=caller_id)	# process message asynchronously 
 														# (e.g. download and send emails) using Celery
 	###if the message was successfully sent... TODO to check
 	resp.play("/assets/audio/sent_message.mp3")				# Your message was sent. Thank you for contacting EHHOP. Goodbye!

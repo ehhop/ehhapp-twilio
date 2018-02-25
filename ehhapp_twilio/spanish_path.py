@@ -5,26 +5,27 @@ from ehhapp_twilio.backgroundtasks import *
 
 @app.route("/sp/new_established_menu", methods=["GET","POST"])
 def sp_new_established_menu():
-        '''respond to digit press when the clinic is open'''
-        resp = twilio.twiml.Response()
-        digit = request.values.get('Digits', None)                              # get keypress
-        day_of_week = datetime.now(pytz.timezone('US/Eastern')).weekday()       # get day of week (0 is Monday and 6 is Sunday)
-        if digit == "2":
-                resp.redirect("/sp/take_message/9")
-        elif digit == "3":
-		if day_of_week == 5:
-	                with resp.gather(numDigits=1, action="/handle_key/sp/clinic_open_menu", method="POST") as g:
-        	                for i in range(0,3):
-                	                g.play("/assets/audio/sp_clinic_open_menu.mp3")
-                        	        g.pause(length=5)
-		else:
-	                with resp.gather(numDigits=1, action="/handle_key/sp/clinic_closed_menu", method="POST") as g:
-        	                for i in range(0,3):
-                	                g.play("/assets/audio/sp_clinic_open_menu.mp3")
-                        	        g.pause(length=5)
-        else:
-                resp.redirect('/sp/new_established_menu')
-        return str(resp)
+	'''respond to digit press when the clinic is open'''
+	resp = twilio.twiml.Response()
+	digit = request.values.get('Digits', None)                              # get keypress
+	day_of_week = datetime.now(pytz.timezone('US/Eastern')).weekday()       # get day of week (0 is Monday and 6 is Sunday)
+	hour_of_day = datetime.now(pytz.timezone('US/Eastern')).hour
+	if digit == "2":
+	        resp.redirect("/sp/take_message/9")
+	elif digit == "3":
+	    if (day_of_week == 5) & ((hour_of_day >=7) & (hour_of_day < 15)):
+	        with resp.gather(numDigits=1, action="/handle_key/sp/clinic_open_menu", method="POST") as g:
+	                for i in range(0,3):
+	                        g.play("/assets/audio/sp_clinic_open_menu.mp3")
+	                        g.pause(length=5)
+	    else:
+	        with resp.gather(numDigits=1, action="/handle_key/sp/clinic_closed_menu", method="POST") as g:
+	            for i in range(0,3):
+	                        g.play("/assets/audio/sp_clinic_closed_menu.mp3")
+	                        g.pause(length=5)
+	else:
+	        resp.redirect('/sp/new_established_menu')
+	return str(resp)
 	
 @app.route("/handle_key/sp/clinic_open_menu", methods=["GET", "POST"])
 def sp_clinic_open_menu():
@@ -41,19 +42,21 @@ def sp_clinic_open_menu():
 	oncall_current_phone = getOnCallPhoneNum()
 
 	# appointment today
-	#if digit == '1':
-	#	# now transferring your call
-	#	resp.play("/assets/audio/sp_xfer_call.mp3") # RE-RECORD
-	#	# dial current CM
-	#	resp.dial(oncall_current_phone)
-	#	# if the call fails
-	#	resp.play('/assets/audio/allbusy_trylater_sp.mp3') # RE-RECORD
-	#	# replay initial menu
-	#	with resp.gather(numDigits=1, action="/handle_key/sp/clinic_open_menu", method="POST") as g:
-	#			g.play("/assets/audio/sp_clinic_open_menu.mp3")
-	#			g.pause(length=5)
+	if (digit == '1') | (digit == '2'):
+		# now transferring your call
+		resp.play("/assets/audio/sp_xfer_call.mp3") # RE-RECORD
+		# dial current CMs
+		with resp.dial(timeout=15) as d:
+			for number in oncall_current_phone:
+				d.number(number)
+		# if the call fails
+		resp.play('/assets/audio/allbusy_trylater_sp.mp3') # RE-RECORD
+		# replay initial menu
+		with resp.gather(numDigits=1, action="/handle_key/sp/clinic_open_menu", method="POST") as g:
+				g.play("/assets/audio/sp_clinic_open_menu.mp3")
+				g.pause(length=5)
 	# not been here before
-	if digit in [str(i.digit) for i in models.Intent.query.all() if int(i.digit) >= 0]:
+	elif digit in [str(i.digit) for i in models.Intent.query.all() if int(i.digit) >= 0]:
 		return redirect('/sp/take_message/' + digit)
 	# accidential key press
 	else:
@@ -76,7 +79,7 @@ def sp_clinic_closed_menu():
 		resp.play('/assets/audio/sp_incorrectkey.mp3') # RE-RECORD
 		resp.pause(length=3)
 		with resp.gather(numDigits=1, action="/handle_key/sp/clinic_closed_menu", method="POST") as g: 
-			g.play("/assets/audio/sp_clinic_open_menu.mp3") # RE-RECORD
+			g.play("/assets/audio/sp_clinic_closed_menu.mp3") # RE-RECORD
 			g.pause(length=5)
 	return str(resp)
 	
@@ -109,12 +112,13 @@ def sp_handle_recording(intent):
 	'''patient has finished leaving recording'''
 	resp = twilio.twiml.Response()
 	ani = request.values.get('From', 'None')
+	caller_id = request.values.get("CallerName", None)
 	to_email = request.values.get('to_email', None)
 	no_requireds = True if to_email != None else False
 	recording_url = request.values.get("RecordingUrl", None)
 
 	# process message asynchronously (e.g. download and send emails) using Celery
-	async_process_message.delay(recording_url, intent, ani, assign=to_email, no_requireds=no_requireds)
+	async_process_message.delay(recording_url, intent, ani, assign=to_email, no_requireds=no_requireds, caller_id=caller_id)
 
 	###if the message was successfully sent... TODO to check
 	# Your message was sent. Thank you for contacting EHHOP. Goodbye!
