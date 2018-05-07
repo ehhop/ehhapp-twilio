@@ -1,11 +1,12 @@
 # from python_box_oauth2 import *; upload_file("/Users/ryanneff/Desktop/aa_atl_nyc_tuesday_morning.pdf", dest_folder_name=u"test",dest_file_name="test.pdf")
 
 from boxsdk import OAuth2, Client
-from boxsdk.auth.remote_managed_oauth2 import RemoteOAuth2
+from boxsdk.auth.redis_managed_oauth2 import RedisManagedOAuth2
 import json, random, subprocess
 from flask import Flask, redirect, request
 from boxsdk.network.default_network import DefaultNetwork
 from pprint import pformat
+import redis
 
 class LoggingNetwork(DefaultNetwork):
     def request(self, method, url, access_token, **kwargs):
@@ -32,26 +33,32 @@ def store_tokens(access_token, refresh_token, path="/var/wsgiapps/ehhapp_twilio/
 	outjson = {"access_token":access_token,
 				"refresh_token":refresh_token}
 	json.dump(outjson,open(path,"w"))
+        print("store tokens: ",access_token, refresh_token)
+        return access_token, refresh_token
 
-def load_tokens(path="/var/wsgiapps/ehhapp_twilio/box_oauth_second_step.json"):
+def load_tokens(access_token=None, refresh_token=None,path="/var/wsgiapps/ehhapp_twilio/box_oauth_second_step.json"):
+#        print("load tokens: input", access_token, refresh_token)
 	injson = json.load(open(path,"r"))
+#        print("load tokens: output",injson["access_token"],injson["refresh_token"])
 	return (injson["access_token"],injson["refresh_token"])
 
 ###
 
 app_oauth = Flask(__name__)
 
-box_client_id = ""
-box_client_secret = ""
-access_token, refresh_token = load_tokens()
+box_client_id = "nanananananananana"
+box_client_secret = "spiderman"
+#access_token, refresh_token = load_tokens()
 
-oauth = RemoteOAuth2(
+redis_id = "mssm"
+redis_pass = "tunaktunaktun"
+redis = redis.StrictRedis(host='localhost', port=6379,db=0,password=redis_pass)
+
+oauth = RedisManagedOAuth2(
   client_id=box_client_id,
   client_secret=box_client_secret, 
-  access_token = access_token,
-  refresh_token = refresh_token,
-  store_tokens = store_tokens,
-  retrieve_access_token = load_tokens
+  redis_server=redis, 
+  unique_id = redis_id
 )
 
 #client = Client(oauth, LoggingNetwork())
@@ -61,20 +68,21 @@ client = Client(oauth)
 redirect_uri = "http://localhost:8080/oauthcallback"
 
 @app_oauth.route("/")
-def run_flow():
+def run_flow(oauth=oauth):
 	global csrf_token
 	auth_url, csrf_token = oauth.get_authorization_url(redirect_uri)
 	return redirect(auth_url)
 
 ### "localhost:8080/oauthcallback"
 @app_oauth.route('/oauthcallback')
-def capture(redirect_uri = redirect_uri):
+def capture(oauth=oauth, redirect_uri = redirect_uri):
   # Capture auth code and csrf token via state
   code = request.args.get('code')
   state = request.args.get('state')
 
   # If csrf token matches, fetch tokens
   assert state == csrf_token
+  print("trying to authenticate...")
   access_token, refresh_token = oauth.authenticate(code)
   print("access:",access_token)
   print("refresh:",refresh_token)
@@ -82,7 +90,7 @@ def capture(redirect_uri = redirect_uri):
   return oauth, "Authenticated!!"
 
 def upload_file(source="", dest_folder_name="test", dest_file_name="test_file", 
-                force=False, stream=None):
+                force=False, stream=None, oauth=oauth):
 	client = Client(oauth)
 	base_folder = client.folder(folder_id=0).get()
 	dest_folder_id = None
@@ -124,7 +132,7 @@ def upload_file(source="", dest_folder_name="test", dest_file_name="test_file",
 def download_file(source_folder_name="test", 
                   source_file_name="test_file", 
                   source_file_id=None,
-                  destination="./test"):
+                  destination="./test", oauth=oauth):
 	client = Client(oauth)
 	base_folder = client.folder(folder_id=0).get()
 	source_folder = None
