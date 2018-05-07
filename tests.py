@@ -93,7 +93,7 @@ class HelloTest(unittest.TestCase):
      
     def test_celery_VM_upload_download(self):
         print "checking celery and VM downloads"
-        upload = ehhapp_twilio.backgroundtasks.async_process_message.apply_async(args=["http://www.kozco.com/tech/piano2.wav", 0, "1234567890", "Twilio"], kwargs={'assign':"rneff@ehhapp.org"})
+        upload = ehhapp_twilio.backgroundtasks.async_process_message.apply_async(args=["http://www.kozco.com/tech/piano2.wav", 0, "1234567890", "ryan.neff@icahn.mssm.edu"], kwargs={'assign':"rneff@ehhapp.org"})
         assert ".wav" in upload.get()
         download = self.app.get("/play_recording?filename=" + upload.get())
         assert download.status_code in [200, 302]

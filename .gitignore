@@ -4,6 +4,7 @@ venv
 *.json
 config.py
 celeryconfig.py
+python_box_oauth2.py
 *.swp
 *.tsv
 *.db

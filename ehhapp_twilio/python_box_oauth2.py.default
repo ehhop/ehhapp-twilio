@@ -1,0 +1,159 @@
+# from python_box_oauth2 import *; upload_file("/Users/ryanneff/Desktop/aa_atl_nyc_tuesday_morning.pdf", dest_folder_name=u"test",dest_file_name="test.pdf")
+
+from boxsdk import OAuth2, Client
+import json, random, subprocess
+from flask import Flask, redirect, request
+from boxsdk.network.default_network import DefaultNetwork
+from pprint import pformat
+
+class LoggingNetwork(DefaultNetwork):
+    def request(self, method, url, access_token, **kwargs):
+        """ Base class override. Pretty-prints outgoing requests and incoming responses. """
+        print '\x1b[36m{} {} {}\x1b[0m'.format(method, url, pformat(kwargs))
+        response = super(LoggingNetwork, self).request(
+            method, url, access_token, **kwargs
+        )
+        if response.ok:
+            print '\x1b[32m{}\x1b[0m'.format(response.content)
+        else:
+            print '\x1b[31m{}\n{}\n{}\x1b[0m'.format(
+                response.status_code,
+                response.headers,
+                pformat(response.content),
+            )
+        return response
+
+def randomword(length):
+        '''generate a random string of whatever length, good for filenames'''
+        return ''.join(random.choice('abcdefghijklmnopqrstuvwxyz') for i in range(length))
+
+def store_tokens(access_token, refresh_token, path="/var/wsgiapps/ehhapp_twilio/box_oauth_second_step.json"):
+	outjson = {"access_token":access_token,
+				"refresh_token":refresh_token}
+	json.dump(outjson,open(path,"w"))
+
+def load_tokens(path="/var/wsgiapps/ehhapp_twilio/box_oauth_second_step.json"):
+	injson = json.load(open(path,"r"))
+	return injson["access_token"],injson["refresh_token"]
+
+###
+
+app_oauth = Flask(__name__)
+
+box_client_id = "nanananananana"
+box_client_secret = "batmanbabtman"
+access_token, refresh_token = load_tokens()
+
+oauth = OAuth2(
+  client_id=box_client_id,
+  client_secret=box_client_secret, 
+  access_token = access_token,
+  refresh_token = refresh_token,
+  store_tokens = store_tokens
+)
+
+#client = Client(oauth, LoggingNetwork())
+client = Client(oauth)
+
+#csrf_token = 'yfkvhtxpjhgpkgyddxgelbmgbqozqbijstuxomtjoqhimwibmoiwinlfikexzcsc'
+redirect_uri = "http://localhost:8080/oauthcallback"
+
+@app_oauth.route("/")
+def run_flow():
+	global csrf_token
+	auth_url, csrf_token = oauth.get_authorization_url(redirect_uri)
+	return redirect(auth_url)
+
+### "localhost:8080/oauthcallback"
+@app_oauth.route('/oauthcallback')
+def capture(oauth = oauth, redirect_uri = redirect_uri):
+  # Capture auth code and csrf token via state
+  code = request.args.get('code')
+  state = request.args.get('state')
+
+  # If csrf token matches, fetch tokens
+  assert state == csrf_token
+  access_token, refresh_token = oauth.authenticate(code)
+  print("access:",access_token)
+  print("refresh:",refresh_token)
+  store_tokens(access_token, refresh_token)
+  return oauth, "Authenticated!!"
+
+def upload_file(source="", dest_folder_name="test", dest_file_name="test_file", oauth=oauth, 
+                force=False, stream=None):
+	client = Client(oauth)
+	base_folder = client.folder(folder_id=0).get()
+	dest_folder_id = None
+	box_file = None
+	for a in base_folder.item_collection["entries"]:
+		#print(a["type"])
+		if a["type"] == "folder":
+			#print(a["name"])
+			if a["name"]==dest_folder_name:
+				dest_folder_id = a["id"]
+				break
+	if dest_folder_id:
+		dest_folder = client.folder(folder_id=dest_folder_id)
+		try:
+			if stream!=None:
+				box_file = dest_folder.upload_stream(stream, file_name=dest_file_name)
+			else:
+				box_file = dest_folder.upload(source, 
+				                              file_name=dest_file_name, 
+				                              upload_using_accelerator=True)
+		except Exception as err:
+			print(err.message)
+			box_file_id = err._context_info["conflicts"]["id"]
+			if force:
+				status = client.file(file_id=box_file_id).delete()
+				if stream!=None:
+					box_file = dest_folder.upload_stream(stream, file_name=dest_file_name)
+				else:
+					box_file = dest_folder.upload(source, 
+				                              file_name=dest_file_name, 
+				                              upload_using_accelerator=True)
+			else:
+				raise(err)
+
+	else:
+		return "No folder found!"
+	return box_file
+
+def download_file(source_folder_name="test", 
+                  source_file_name="test_file", 
+                  source_file_id=None,
+                  destination="./test", oauth=oauth):
+	client = Client(oauth)
+	base_folder = client.folder(folder_id=0).get()
+	source_folder = None
+	box_file = None
+	for a in base_folder.item_collection["entries"]:
+		#print(a["type"])
+		if a["type"] == "folder":
+			#print(a["name"])
+			if a["name"]==source_folder_name:
+				source_folder = client.folder(folder_id=a["id"])
+				break
+	if source_folder:
+		source_folder_items = client.search(
+		                                   ancestor_folders=[source_folder],
+		                                   limit=1,
+		                                   offset=0,
+		                                   query=source_file_name)
+		if len(source_folder_items)==0:
+			return "No file found!",404
+		else:
+			box_file=source_folder_items[0]
+			if destination!=None:
+				with open(destination,"wb") as f:
+					f.write(box_file.content())
+				return "Downloaded!",200
+			else:
+				return box_file.content()
+	else:
+		return "No folder found!",404
+	
+if __name__=="__main__":
+	#start the web server if run directly
+	app_oauth.run(debug=True, port=8080)
+	run_flow()
