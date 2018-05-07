@@ -4,6 +4,7 @@ from ehhapp_twilio.database_helpers import *
 from ehhapp_twilio.database import db_session
 from ehhapp_twilio.models import *
 from ehhapp_twilio.forms import *
+import ehhapp_twilio.python_box_oauth2 as box_api
 
 import flask.ext.login as flask_login
 from oauth2client import client as gauthclient
@@ -117,11 +118,14 @@ def play_vm_recording():
     				self.data = ""
   			def __call__(self,s):
      				self.data += s
-		v = VMFile()
-		session = FTP_TLS('ftp.box.com', box_username, box_password)	# open Box
-		session.retrbinary('RETR recordings/' + filename, v)	# add each chunk of data to memory from Box
-		session.close()						# close Box
-		return v.data						# return the data put back together again to be sent to browser
+		#v = VMFile()
+		#session = FTP_TLS('ftp.box.com', box_username, box_password)	# open Box
+		#session.retrbinary('RETR recordings/' + filename, v)	# add each chunk of data to memory from Box
+		#session.close()						# close Box
+		v = box_api.download_file(source_folder_name="recordings",
+		                          source_file_name=filename,
+		                          destination=None)
+		return v						# return the data put back together again to be sent to browser
 
 	vm_info = Voicemail.query.filter_by(message=filename).first() # get VM record
 	if vm_info != None:

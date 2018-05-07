@@ -7,6 +7,7 @@ from ehhapp_twilio.database import db_session
 from ehhapp_twilio.models import Intent, Assignment
 from ehhapp_twilio.voicemail_helpers import add_voicemail
 from ehhapp_twilio.webhooks import *
+import ehhapp_twilio.python_box_oauth2 as box_api
 
 import smtplib, pytz, requests, random, string, re
 from ftplib import FTP_TLS
@@ -16,6 +17,8 @@ from requests.auth import HTTPBasicAuth
 from twilio.rest import TwilioRestClient
 
 from flask.ext.mail import Message
+
+from ehhapp_twilio.python_gmail_oauth2 import SendMessage
 
 # Everything we do when we get a new VM
 
@@ -105,7 +108,7 @@ def process_recording(recording_url, intent, ani, requireds=None, assign=None, n
 	#delete_file(recording_url)					# delete recording from Twilio
 	return recording_name
 
-def send_email(recording_name, intent, ani, requireds, assign, caller_id=None, app=app):
+def send_email_old(recording_name, intent, ani, requireds, assign, caller_id=None, app=app):
 	'''send an email to the required and assigned recipients'''
 	intent = str(intent)
 	# look for configuration variables in params.conf file...
@@ -124,35 +127,67 @@ def send_email(recording_name, intent, ani, requireds, assign, caller_id=None, a
 	mail.send(msg)
 	return None
 
+def send_email(recording_name, intent, ani, requireds, assign, caller_id=None, app=app):
+	'''send an email to the required and assigned recipients using the new Oauth2 method'''
+	'''SendMessage(sender, to, cc, subject, msgHtml, msgPlain):'''
+	intent = str(intent)
+	# look for configuration variables in params.conf file...
+	msg = Message(sender=from_email)
+	description = Intent.query.filter_by(digit=intent).first().description
+	assign_names = " and ".join([a.split('@')[0].replace("."," ").title() for a in assign.split(',')]) # fancy :)
+	msg.subject = assign_names + ' assigned EHHOP voicemail from ' + description + ", number " + ani		
+	msg.sender  = "ehhop.voicemails@icahn.mssm.edu"
+	msg.recipients = assign
+	msg.cc = requireds
+	with app.app_context():
+		msg.html = render_template('email.html', from_phone = ani, assign_names = assign_names, 
+					playback_url = player_url + recordings_base + recording_name, desc = description, caller_id=caller_id)
+		msg.body = render_template('email.txt', from_phone = ani, assign_names = assign_names, 
+					playback_url = player_url + recordings_base + recording_name, desc = description, caller_id=caller_id)
+	SendMessage(msg.sender, msg.recipients, msg.cc, msg.subject, msg.html, msg.body)
+	return None
+
 def save_file(recording_url, auth_method):
 	'''save a VM from twilio, pick a random name'''
 	save_name = randomword(64) + ".mp3" # take regular name and salt it
 										# we are now using HTTPS basic auth to do the downloads
 										# step 0 - open up a FTP session with HIPAA box
-	session = FTP_TLS('ftp.box.com', box_username, box_password)
+	#session = FTP_TLS('ftp.box.com', box_username, box_password)
 										# step 1 - open a request to get the voicemail using a secure channel with Twilio
-	response = requests.get(recording_url+".mp3", stream=True, auth=auth_method) 	# no data has been downloaded yet (just headers)
+	response = requests.get(recording_url+".mp3", stream=True,auth=auth_method) 	# no data has been downloaded yet (just headers)
 										# step 2 - read the response object in chunks and write it to the HIPAA box directly
-	session.storbinary('STOR recordings/' + save_name, response.raw)
-
-	response.close()										# step 3 - cleanup
-	session.quit()
+	tmpfile = "tmp%s"%randomword(3)
+	with open(tmpfile,"wb") as fp:
+		for block in response.iter_content(1024):
+			fp.write(block)
+	status = box_api.upload_file(source=tmpfile,
+	                             dest_folder_name="recordings",
+	                             dest_file_name=save_name)
+	#response.close()										# step 3 - cleanup
+	#session.quit()
 	del response
+	os.remove(tmpfile)
 	return save_name
 
 def save_file_with_name(recording_url, auth_method, save_name):
 	'''save a VM from twilio, specify a filename, NOT USED'''
 										# we are now using HTTP basic auth to do the downloads
 										# step 0 - open up a FTP session with HIPAA box
-	session = FTP_TLS('ftp.box.com', box_username, box_password)
+	#session = FTP_TLS('ftp.box.com', box_username, box_password)
 										# step 1 - open a request to get the voicemail using a secure channel with Twilio
 	response = requests.get(recording_url, stream=True, auth=auth_method) 	# no data has been downloaded yet (just headers)
 										# step 2 - read the response object in chunks and write it to the HIPAA box directly
-	session.storbinary('STOR recordings/' + save_name, response.raw)
-	
-	response.close()										# step 3 - cleanup
-	session.quit()
+	tmpfile = "tmp%s"%randomword(3)
+	with open(tmpfile,"wb") as fp:
+		for block in response.iter_content(1024):
+			fp.write(block)
+	status = box_api.upload_file(source=tmpfile,
+	                             dest_folder_name="recordings",
+	                             dest_file_name=save_name)
+	#response.close()										# step 3 - cleanup
+	#session.quit()
 	del response
+	os.remove(tmpfile)
 	return save_name
 
 def delete_file(recording_url):

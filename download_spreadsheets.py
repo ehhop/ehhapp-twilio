@@ -12,10 +12,10 @@ execfile(activate_this, dict(__file__=activate_this))
 
 from ehhapp_twilio.config import *
 import gspread, json
-from oauth2client.client import SignedJwtAssertionCredentials
-json_key = json.load(open(google_oauth2_file))
+from oauth2client.service_account import ServiceAccountCredentials
+#json_key = json.load(open(google_oauth2_file))
 scope = ['https://spreadsheets.google.com/feeds']
-credentials = SignedJwtAssertionCredentials(json_key['client_email'], json_key['private_key'], scope)
+credentials = ServiceAccountCredentials.from_json_keyfile_name(google_oauth2_file, scope)
 
 # set up
 conn = gspread.authorize(credentials)
