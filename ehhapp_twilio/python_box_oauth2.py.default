@@ -1,6 +1,7 @@
 # from python_box_oauth2 import *; upload_file("/Users/ryanneff/Desktop/aa_atl_nyc_tuesday_morning.pdf", dest_folder_name=u"test",dest_file_name="test.pdf")
 
 from boxsdk import OAuth2, Client
+from boxsdk.auth.remote_managed_oauth2 import RemoteOAuth2
 import json, random, subprocess
 from flask import Flask, redirect, request
 from boxsdk.network.default_network import DefaultNetwork
@@ -34,22 +35,23 @@ def store_tokens(access_token, refresh_token, path="/var/wsgiapps/ehhapp_twilio/
 
 def load_tokens(path="/var/wsgiapps/ehhapp_twilio/box_oauth_second_step.json"):
 	injson = json.load(open(path,"r"))
-	return injson["access_token"],injson["refresh_token"]
+	return (injson["access_token"],injson["refresh_token"])
 
 ###
 
 app_oauth = Flask(__name__)
 
-box_client_id = "nanananananana"
-box_client_secret = "batmanbabtman"
+box_client_id = ""
+box_client_secret = ""
 access_token, refresh_token = load_tokens()
 
-oauth = OAuth2(
+oauth = RemoteOAuth2(
   client_id=box_client_id,
   client_secret=box_client_secret, 
   access_token = access_token,
   refresh_token = refresh_token,
-  store_tokens = store_tokens
+  store_tokens = store_tokens,
+  retrieve_access_token = load_tokens
 )
 
 #client = Client(oauth, LoggingNetwork())
@@ -66,7 +68,7 @@ def run_flow():
 
 ### "localhost:8080/oauthcallback"
 @app_oauth.route('/oauthcallback')
-def capture(oauth = oauth, redirect_uri = redirect_uri):
+def capture(redirect_uri = redirect_uri):
   # Capture auth code and csrf token via state
   code = request.args.get('code')
   state = request.args.get('state')
@@ -79,7 +81,7 @@ def capture(oauth = oauth, redirect_uri = redirect_uri):
   store_tokens(access_token, refresh_token)
   return oauth, "Authenticated!!"
 
-def upload_file(source="", dest_folder_name="test", dest_file_name="test_file", oauth=oauth, 
+def upload_file(source="", dest_folder_name="test", dest_file_name="test_file", 
                 force=False, stream=None):
 	client = Client(oauth)
 	base_folder = client.folder(folder_id=0).get()
@@ -122,7 +124,7 @@ def upload_file(source="", dest_folder_name="test", dest_file_name="test_file", 
 def download_file(source_folder_name="test", 
                   source_file_name="test_file", 
                   source_file_id=None,
-                  destination="./test", oauth=oauth):
+                  destination="./test"):
 	client = Client(oauth)
 	base_folder = client.folder(folder_id=0).get()
 	source_folder = None
