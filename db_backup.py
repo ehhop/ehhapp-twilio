@@ -18,6 +18,6 @@ import subprocess
 
 save_name = subprocess.check_output('date +%m%d%y', shell=True).strip('\n') + '-ehhapp-twilio.db'
 
-print("store file")
+#print("store file")
 box_api.upload_file(source="ehhapp-twilio.db",dest_folder_name="server",dest_file_name=save_name,force=True)
-print("completed!")
+#print("completed!")

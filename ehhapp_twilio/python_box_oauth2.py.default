@@ -149,7 +149,7 @@ def download_file(source_folder_name="test",
 		                                   ancestor_folders=[source_folder],
 		                                   limit=1,
 		                                   offset=0,
-		                                   query=source_file_name)
+		                                   query=source_file_name.split(".")[0].strip())
 		if len(source_folder_items)==0:
 			return "No file found!",404
 		else:

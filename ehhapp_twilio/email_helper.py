@@ -9,7 +9,7 @@ from ehhapp_twilio.voicemail_helpers import add_voicemail
 from ehhapp_twilio.webhooks import *
 import ehhapp_twilio.python_box_oauth2 as box_api
 
-import smtplib, pytz, requests, random, string, re
+import smtplib, pytz, requests, random, string, re, time
 from ftplib import FTP_TLS
 from datetime import datetime, timedelta
 from email.mime.text import MIMEText
@@ -154,11 +154,22 @@ def save_file(recording_url, auth_method):
 										# step 0 - open up a FTP session with HIPAA box
 	#session = FTP_TLS('ftp.box.com', box_username, box_password)
 										# step 1 - open a request to get the voicemail using a secure channel with Twilio
+
 	response = requests.get(recording_url+".mp3", stream=True,auth=auth_method) 	# no data has been downloaded yet (just headers)
 										# step 2 - read the response object in chunks and write it to the HIPAA box directly
+	max_retries = 3
+	retries = 0
+	while response.status_code != requests.codes.ok:
+	    retries += 1
+	    print("%d while accessing %s.mp3, retrying, attempt %d"%(response.status_code,recording_url,retries))
+	    print("Sleeping for 30 seconds first.")
+	    time.sleep(30)
+	    response = requests.get(recording_url+".mp3", stream=True,auth=auth_method)
+	    if retries > max_retries:
+		raise Exception("Failed to get recording. Stop.")
 	tmpfile = "tmp%s"%randomword(3)
 	with open(tmpfile,"wb") as fp:
-		for block in response.iter_content(1024):
+		for block in response.iter_content(8196):
 			fp.write(block)
 	status = box_api.upload_file(source=tmpfile,
 	                             dest_folder_name="recordings",
@@ -177,6 +188,7 @@ def save_file_with_name(recording_url, auth_method, save_name):
 										# step 1 - open a request to get the voicemail using a secure channel with Twilio
 	response = requests.get(recording_url, stream=True, auth=auth_method) 	# no data has been downloaded yet (just headers)
 										# step 2 - read the response object in chunks and write it to the HIPAA box directly
+
 	tmpfile = "tmp%s"%randomword(3)
 	with open(tmpfile,"wb") as fp:
 		for block in response.iter_content(1024):
