@@ -10,7 +10,9 @@ def sp_new_established_menu():
 	digit = request.values.get('Digits', None)                              # get keypress
 	day_of_week = datetime.now(pytz.timezone('US/Eastern')).weekday()       # get day of week (0 is Monday and 6 is Sunday)
 	hour_of_day = datetime.now(pytz.timezone('US/Eastern')).hour
-	if digit == "2":
+	#day_of_week = 5
+        #hour_of_day = 9
+        if digit == "2":
 	        resp.redirect("/sp/take_message/9")
 	elif digit == "3":
 	    if (day_of_week == 5) & ((hour_of_day >=7) & (hour_of_day < 15)):

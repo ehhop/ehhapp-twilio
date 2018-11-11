@@ -1,0 +1,70 @@
+{% extends "layout_player_twilio.html" %}
+{% block navbar %}
+<li class="inactive"><a href="/calls">Call Log</a></li>
+<li class="inactive"><a href="/voicemails">Voicemails</a></li>
+<li class="inactive"><a href="/intents">Routing</a></li>
+<li class="inactive"><a href="/assignments">Assignments</a></li>
+<li class="inactive"><a href="/reminders">Reminders</a></li>
+<li class="inactive"><a href="/audiofiles">Audio</a></li>
+{% endblock %}
+{% block body %}
+	    <div class="page-header">
+		    <h1>Voicemail message</h1>
+	    </div>
+	    
+	    <table class="table table-hover">
+		<thead>
+			<tr>
+			<th> Time </th>
+			<th>{{ momentjs(vm.time).calendar() }}</th>
+		</thead>
+		<tbody>
+		<tr>
+			<td> From </td>
+			<td> <a href="tel:{{vm.from_phone}}">{{ vm.from_phone[-10:-7] + "-" + vm.from_phone[-7:-4] + "-" + vm.from_phone[-4:] }}</a></td>
+		</tr>
+		<tr>
+			<td> Caller ID </td>
+			<td> {% if vm.caller_id != None %}{{vm.caller_id}}{% endif %}</td>
+		</tr>
+		<tr>
+			<td> Reason </td>
+			<td> {{ vm.intent }}</td>
+		</tr>
+		<tr>
+			<td> Assigned to </td>
+			<td><a href="mailto:{{vm.assigns}}">{{ vm.assigns.split('@')[0] }}</a></td>
+		</tr>
+		<tr>
+			<td> Status </td>
+			<td>
+				<div class="dropdown">
+			  <button class="btn btn-xs {% if vm.status=="Completed" %}btn-success{% elif vm.status == "New" %}btn-warning{% elif vm.status != None %}btn-secondary{% else %}btn-warning{% endif %} dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+			    {% if vm.status!=None %}{{vm.status}}{% else %}New{% endif %}
+			    <span class="caret"></span>
+			  </button>
+			  <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
+			  	<li class="dropdown-header">Mark as</li>
+			  	<li><a href="/voicemails/{{vm.id}}/status/update/Completed">Completed</a></li>
+			  	<li><a href="/voicemails/{{vm.id}}/status/update/In-progress">In progress</a></li>
+			  	<li><a href="/voicemails/{{vm.id}}/status/update/New">New</a></li>
+			  </ul>
+			</td>
+		</tr>
+		{% if current_user.email =="ryan.neff@icahn.mssm.edu" %}
+		<tr>
+			<td> Actions </td>
+			<td><a href="https://twilio.ehhapp.org/voicemails/delete{{ vm.id }}" class="btn btn-xs btn-danger" role="button">Delete</a></td>
+		</tr>	
+		{% endif %}		
+		</tbody>
+	    </table>
+	    <div class="player-container" style="display:block; width:30%; min-width:300px; margin: 0 auto" id="player1">
+				<div class="player-container" style="display:block; margin: 0 auto" id="player2">
+					<div class="ui360 ui360-vis">
+					  <a href="{{audio_url}}">Voicemail message</a>
+					</div>
+				<div class="instructions">Click the play button to start listening. </div>
+			</div>
+		</div>
+{% endblock %}

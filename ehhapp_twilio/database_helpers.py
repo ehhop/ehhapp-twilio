@@ -23,7 +23,7 @@ class EHHOPdb:							# our Google Drive database
 		filen = self.conn["names"]
 		records = json.load(open(filen))
 		#remove header lines or those deactivated by '#'
-		records = [i for i in records if i['Name'][0] != "#"]
+		records = [i for i in records if "#" not in i['Name']]
 		return records
 
 	def getschedule(self):
