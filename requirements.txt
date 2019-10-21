@@ -50,6 +50,6 @@ SQLAlchemy==1.0.11
 SQLAlchemy-Utils==0.31.6
 twilio==5.3.0
 urllib3==1.14
-Werkzeug==0.11.3
+Werkzeug==0.15.3
 WTForms==2.1
 zope.interface==4.1.3
