@@ -6,7 +6,7 @@ blinker==1.4
 celery==3.1.20
 cffi==1.5.0
 CommonMark==0.5.4
-cryptography==1.2.2
+cryptography==3.2
 DateTime==4.0.1
 docutils==0.12
 email==4.0.2
